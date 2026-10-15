@@ -92,18 +92,158 @@ app.config["DATABASE"] = str(DATABASE)
 # DATABASE CONNECTION
 # =========================================================
 
+class _RemoteRow:
+    """Provide sqlite3.Row-style name and positional access for Turso rows."""
+
+    def __init__(self, columns, values):
+        self._columns = list(columns)
+        self._values = tuple(values)
+        self._indexes = {name: index for index, name in enumerate(self._columns)}
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return self._values[self._indexes[key]]
+        return self._values[key]
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __len__(self):
+        return len(self._values)
+
+    def keys(self):
+        return list(self._columns)
+
+
+class _RemoteCursor:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    @property
+    def description(self):
+        return self._cursor.description
+
+    @property
+    def lastrowid(self):
+        return self._cursor.lastrowid
+
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
+
+    def _row(self, row):
+        if row is None:
+            return None
+        columns = [column[0] for column in (self._cursor.description or ())]
+        return _RemoteRow(columns, row)
+
+    def fetchone(self):
+        return self._row(self._cursor.fetchone())
+
+    def fetchall(self):
+        return [self._row(row) for row in self._cursor.fetchall()]
+
+    def fetchmany(self, size=None):
+        rows = self._cursor.fetchmany() if size is None else self._cursor.fetchmany(size)
+        return [self._row(row) for row in rows]
+
+    def __iter__(self):
+        for row in self._cursor:
+            yield self._row(row)
+
+
+class _RemoteConnection:
+    """Small sqlite3-compatible adapter around Turso's DB-API driver."""
+
+    def __init__(self, connection):
+        self._connection = connection
+        self.row_factory = None
+
+    @staticmethod
+    def _raise_sqlite_error(error):
+        message = str(error)
+        if "constraint" in message.lower() or "unique" in message.lower():
+            raise sqlite3.IntegrityError(message) from error
+        raise sqlite3.OperationalError(message) from error
+
+    def execute(self, sql, parameters=()):
+        # Foreign-key enforcement is connection-local in SQLite. Turso's
+        # serverless HTTP connection does not expose that PRAGMA; application
+        # routes validate related records before writing.
+        if sql.strip().lower().startswith("pragma foreign_keys"):
+            return _RemoteCursor(_EmptyCursor())
+        try:
+            return _RemoteCursor(self._connection.execute(sql, parameters))
+        except Exception as error:
+            self._raise_sqlite_error(error)
+
+    def executescript(self, script):
+        statement = ""
+        cursor = _RemoteCursor(_EmptyCursor())
+        for line in script.splitlines(keepends=True):
+            statement += line
+            if sqlite3.complete_statement(statement):
+                if statement.strip():
+                    cursor = self.execute(statement)
+                statement = ""
+        if statement.strip():
+            cursor = self.execute(statement)
+        return cursor
+
+    def commit(self):
+        try:
+            return self._connection.commit()
+        except Exception as error:
+            self._raise_sqlite_error(error)
+
+    def rollback(self):
+        try:
+            return self._connection.rollback()
+        except Exception as error:
+            self._raise_sqlite_error(error)
+
+    def close(self):
+        return self._connection.close()
+
+
+class _EmptyCursor:
+    description = None
+    lastrowid = None
+    rowcount = -1
+
+    def fetchone(self):
+        return None
+
+    def fetchall(self):
+        return []
+
+    def fetchmany(self, size=None):
+        return []
+
+    def __iter__(self):
+        return iter(())
+
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(
-            app.config["DATABASE"],
-            timeout=30
-        )
-
-        g.db.row_factory = sqlite3.Row
-
-        g.db.execute("PRAGMA foreign_keys = ON")
-
-        g.db.execute("PRAGMA busy_timeout = 30000")
+        turso_url = os.environ.get("TURSO_DATABASE_URL")
+        turso_token = os.environ.get("TURSO_AUTH_TOKEN")
+        if turso_url:
+            if not turso_token:
+                raise RuntimeError("TURSO_AUTH_TOKEN is required with TURSO_DATABASE_URL")
+            try:
+                import turso_serverless
+            except ImportError as error:
+                raise RuntimeError("Install turso_serverless to use the hosted database") from error
+            remote_connection = turso_serverless.connect(turso_url, auth_token=turso_token)
+            g.db = _RemoteConnection(remote_connection)
+        else:
+            g.db = sqlite3.connect(
+                app.config["DATABASE"],
+                timeout=30
+            )
+            g.db.row_factory = sqlite3.Row
+            g.db.execute("PRAGMA foreign_keys = ON")
+            g.db.execute("PRAGMA busy_timeout = 30000")
 
     return g.db
 
@@ -138,6 +278,20 @@ def save_uploaded_image(upload, folder, prefix):
     )
     if not signature_ok:
         raise ValueError("Image must be a valid PNG, JPG or WebP file under 5 MB.")
+
+    if os.environ.get("CLOUDINARY_URL"):
+        try:
+            import cloudinary
+            import cloudinary.uploader
+        except ImportError as error:
+            raise RuntimeError("Install cloudinary to use hosted image storage") from error
+
+        result = cloudinary.uploader.upload(
+            io.BytesIO(payload),
+            folder=f"hostelhub/{folder}",
+            resource_type="image",
+        )
+        return result["secure_url"]
 
     filename = f"{prefix}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}{extension}"
     image_directory = UPLOADS_DIR / folder
@@ -559,6 +713,46 @@ def init_db():
         db.execute("""
             ALTER TABLE orders
             ADD COLUMN payment_reference TEXT
+        """)
+
+    if "order_type" not in order_columns:
+        db.execute("""
+            ALTER TABLE orders
+            ADD COLUMN order_type TEXT NOT NULL DEFAULT 'product'
+        """)
+
+    if "estimated_delivery" not in order_columns:
+        db.execute("""
+            ALTER TABLE orders
+            ADD COLUMN estimated_delivery TEXT
+        """)
+
+    order_item_columns = {
+        row["name"]
+        for row in db.execute("PRAGMA table_info(order_items)").fetchall()
+    }
+    if "item_name" not in order_item_columns:
+        db.execute("""
+            ALTER TABLE order_items
+            ADD COLUMN item_name TEXT NOT NULL DEFAULT ''
+        """)
+    if "unit_price" not in order_item_columns:
+        db.execute("""
+            ALTER TABLE order_items
+            ADD COLUMN unit_price REAL NOT NULL DEFAULT 0
+        """)
+        db.execute("""
+            UPDATE order_items
+            SET unit_price = price
+            WHERE price != 0
+        """)
+    if "item_name" not in order_item_columns:
+        db.execute("""
+            UPDATE order_items
+            SET item_name = COALESCE(
+                (SELECT name FROM products WHERE products.id = order_items.product_id),
+                'Product'
+            )
         """)
 
     # Services table migrations
