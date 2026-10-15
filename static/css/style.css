@@ -311,6 +311,27 @@ h4,
     gap: 11px;
 }
 
+.install-app-btn {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 13px;
+    border: 1px solid var(--primary);
+    border-radius: 10px;
+    background: var(--primary);
+    color: #fff;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.install-app-btn:hover { filter: brightness(.94); }
+.install-app-btn:disabled { cursor: default; opacity: .82; }
+
 .btn {
     min-height: 44px;
     display: inline-flex;

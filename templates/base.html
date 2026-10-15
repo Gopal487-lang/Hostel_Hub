@@ -22,6 +22,12 @@
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/style.css') }}">
 
+    <link rel="manifest"
+          href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#5b4ed6">
+    <link rel="apple-touch-icon"
+          href="{{ url_for('static', filename='images/hostelhub-192.png') }}">
+
     {% block extra_head %}{% endblock %}
 </head>
 
@@ -113,6 +119,16 @@
             {% endif %}
 
             <div class="header-actions">
+
+
+<button type="button"
+        class="install-app-btn"
+        id="installAppBtn"
+        aria-label="Install HostelHub">
+    <i class="fa-solid fa-download"></i>
+    <span>Install Now</span>
+</button>
+
 
                 <!-- Dark mode remains available in both states -->
                 <button class="theme-toggle"

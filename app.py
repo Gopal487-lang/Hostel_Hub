@@ -62,6 +62,14 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
 
+@app.route("/service-worker.js")
+def pwa_service_worker():
+    response = app.send_static_file("service-worker.js")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 secret_key = os.environ.get("SECRET_KEY")
 if not secret_key:
     # Keep a stable key for local development without requiring shell setup.
@@ -518,6 +526,19 @@ def init_db():
 
     if "out_of_stock_sizes" not in product_columns:
         db.execute("ALTER TABLE products ADD COLUMN out_of_stock_sizes TEXT NOT NULL DEFAULT ''")
+
+    # Previously uploaded files used Flask's static URL. They now live in the
+    # configurable uploads directory so a Render persistent disk can serve them.
+    db.execute("""
+        UPDATE products
+        SET image_url = REPLACE(image_url, '/static/uploads/', '/uploads/')
+        WHERE image_url LIKE '/static/uploads/%'
+    """)
+    db.execute("""
+        UPDATE medical_medicines
+        SET image_url = REPLACE(image_url, '/static/uploads/', '/uploads/')
+        WHERE image_url LIKE '/static/uploads/%'
+    """)
 
     # Orders table migration
 

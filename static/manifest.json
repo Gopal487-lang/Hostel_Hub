@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "HostelHub",
+  "short_name": "HostelHub",
+  "description": "Your hostel life, made easier.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f6fb",
+  "theme_color": "#5b4ed6",
+  "icons": [
+    {
+      "src": "/static/images/hostelhub-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/hostelhub-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

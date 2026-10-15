@@ -861,3 +861,74 @@ if (backToShopping) {
 showShoppingHome();
 
 });
+
+
+
+
+function initializePWAInstall() {
+    const button = document.getElementById("installAppBtn");
+
+    if (!button) return;
+
+    let installPrompt = null;
+
+    const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+
+    if (isStandalone) {
+        button.innerHTML =
+            '<i class="fa-solid fa-check"></i><span>Installed</span>';
+
+        button.disabled = true;
+        return;
+    }
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        installPrompt = event;
+    });
+
+    window.addEventListener("appinstalled", () => {
+        installPrompt = null;
+        button.innerHTML = '<i class="fa-solid fa-check"></i><span>Installed</span>';
+        button.disabled = true;
+    });
+
+    button.addEventListener("click", async () => {
+        if (installPrompt) {
+            installPrompt.prompt();
+
+            await installPrompt.userChoice;
+
+            installPrompt = null;
+        } else {
+            alert(
+                "To install HostelHub, open the browser menu (⋮) " +
+                "and choose Install app or Add to Home screen."
+            );
+        }
+    });
+
+    if ("serviceWorker" in navigator &&
+        location.protocol === "https:") {
+
+        navigator.serviceWorker
+            .register("/service-worker.js")
+            .catch(error => {
+                console.error(
+                    "Service Worker registration failed:",
+                    error
+                );
+            });
+    }
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializePWAInstall
+    );
+} else {
+    initializePWAInstall();
+}
