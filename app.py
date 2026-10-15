@@ -177,6 +177,13 @@ class _RemoteConnection:
         except Exception as error:
             self._raise_sqlite_error(error)
 
+    def executemany(self, sql, parameter_rows):
+        """Run a statement once for each parameter row (sqlite3-compatible)."""
+        cursor = _RemoteCursor(_EmptyCursor())
+        for parameters in parameter_rows:
+            cursor = self.execute(sql, parameters)
+        return cursor
+
     def executescript(self, script):
         statement = ""
         cursor = _RemoteCursor(_EmptyCursor())
