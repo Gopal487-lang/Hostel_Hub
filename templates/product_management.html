@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Product Management | HostelHub</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 25px;
+            background: #f5f6fc;
+            color: #20243a;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            margin: 0 0 7px;
+            font-size: 27px;
+        }
+
+        .subtitle {
+            color: #858ba3;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 16px;
+            border: 0;
+            border-radius: 9px;
+            background: #6558f5;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #5043db;
+        }
+
+        .btn-light {
+            background: #eeecff;
+            color: #5141dc;
+        }
+
+        .btn-danger {
+            background: #ffebee;
+            color: #d73550;
+        }
+
+        .btn-green {
+            background: #e3f8f0;
+            color: #11835f;
+        }
+
+        .flash {
+            padding: 13px 16px;
+            background: #e3f8f0;
+            color: #117954;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 15px;
+            border: 1px solid #eceef5;
+            overflow: hidden;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 850px;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fd;
+            padding: 15px;
+            color: #858ba3;
+            font-size: 11px;
+        }
+
+        td {
+            padding: 15px;
+            border-top: 1px solid #f0f1f7;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .product {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 220px;
+        }
+
+        .product img {
+            width: 55px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 10px;
+            background: #f1f2f8;
+        }
+
+        .placeholder {
+            width: 55px;
+            height: 55px;
+            border-radius: 10px;
+            background: #eeecff;
+            display: grid;
+            place-items: center;
+            font-size: 24px;
+        }
+
+        .product-name {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .muted {
+            color: #858ba3;
+            font-size: 11px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .published {
+            background: #e3f8f0;
+            color: #11835f;
+        }
+
+        .unpublished {
+            background: #fff2df;
+            color: #b87919;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            align-items: center;
+        }
+
+        .actions .btn {
+            padding: 8px 10px;
+            font-size: 11px;
+        }
+
+        .actions form {
+            margin: 0;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #858ba3;
+        }
+
+        .empty div {
+            font-size: 42px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
+
+            .header .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header class="header">
+        <div>
+            <h1>📦 Product Management</h1>
+            <div class="subtitle">
+                Add, edit, publish and manage HostelHub products.
+            </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn" href="{{ url_for('add_product') }}">+ Add Product</a>
+            <a class="btn" style="background:#f08a24" href="{{ url_for('add_product', category='food-snacks') }}">+ Add Food</a>
+            <a class="btn" style="background:#b23db3" href="{{ url_for('add_product', category='clothing-tailoring') }}">+ Add Clothing</a>
+        </div>
+    </header>
+
+    <a class="btn btn-light"
+       href="{{ url_for('admin_dashboard') }}"
+       style="margin-bottom:20px;">
+        ← Back to Dashboard
+    </a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px">
+        <a class="btn {{ 'btn-green' if category_filter == 'all' else 'btn-light' }}" href="{{ url_for('admin_products') }}">All</a>
+        <a class="btn {{ 'btn-green' if category_filter == 'food-snacks' else 'btn-light' }}" href="{{ url_for('admin_products', category='food-snacks') }}">Food &amp; Snacks</a>
+        <a class="btn {{ 'btn-green' if category_filter == 'clothing-tailoring' else 'btn-light' }}" href="{{ url_for('admin_products', category='clothing-tailoring') }}">Clothing &amp; Tailoring</a>
+    </div>
+
+    <div class="table-card">
+        <div class="table-wrap">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>PRODUCT</th>
+                        <th>SHOP</th>
+                        <th>CATEGORY</th>
+                        <th>PRICE</th>
+                        <th>SIZES</th>
+                        <th>STOCK</th>
+                        <th>STATUS</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>
+                            <div class="product">
+
+                                {% if product.image_url %}
+                                    <img
+                                        src="{{ product.image_url }}"
+                                        alt="{{ product.name }}"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';"
+                                    >
+                                    <div class="placeholder" style="display:none;">
+                                        📦
+                                    </div>
+                                {% else %}
+                                    <div class="placeholder">📦</div>
+                                {% endif %}
+
+                                <div>
+                                    <div class="product-name">
+                                        {{ product.name }}
+                                    </div>
+                                    <div class="muted">
+                                        ID: {{ product.id }}
+                                    </div>
+                                </div>
+
+                            </div>
+                        </td>
+
+                        <td>
+                            {{ product.shop_name or 'Shop not assigned' }}
+                            <div class="muted">
+                                {{ product.shop_address or '' }}
+                            </div>
+                        </td>
+
+                        <td><span class="badge published">{{ product.category_name or 'Uncategorized' }}</span></td>
+
+                        <td>₹{{ "%.2f"|format(product.price) }}</td>
+
+                        <td>
+                            {% if product.sizes %}<div style="color:#11835f">Available: {{ product.sizes }}</div>{% endif %}
+                            {% if product.out_of_stock_sizes %}<div style="color:#c2414b">Out: {{ product.out_of_stock_sizes }}</div>{% endif %}
+                            {% if not product.sizes and not product.out_of_stock_sizes %}—{% endif %}
+                        </td>
+
+                        <td>{{ product.stock_quantity }}</td>
+
+                        <td>
+                            {% if product.is_published and product.is_available %}
+                                <span class="badge published">Published</span>
+                            {% elif not product.is_available %}
+                                <span class="badge unpublished">Unavailable</span>
+                            {% else %}
+                                <span class="badge unpublished">Unpublished</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="actions">
+
+                                <a class="btn btn-light"
+                                   href="{{ url_for('edit_product', product_id=product.id) }}">
+                                    Edit
+                                </a>
+
+                                <form method="POST"
+                                      action="{{ url_for('toggle_product_publish', product_id=product.id) }}"
+                                      onsubmit="return confirm('Change this product publication status?');">
+
+                                    <button class="btn btn-green" type="submit">
+                                        {% if product.is_published %}
+                                            Unpublish
+                                        {% else %}
+                                            Publish
+                                        {% endif %}
+                                    </button>
+                                </form>
+
+                                <form method="POST"
+                                      action="{{ url_for('delete_product', product_id=product.id) }}"
+                                      onsubmit="return confirm('Are you sure you want to delete this product?');">
+
+                                    <button class="btn btn-danger" type="submit">
+                                        Delete
+                                    </button>
+                                </form>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                {% else %}
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty">
+                                <div>📦</div>
+                                <h3>No products found</h3>
+                                <p>Add your first product to get started.</p>
+
+                                <a class="btn" href="{{ url_for('add_product') }}">
+                                    + Add First Product
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

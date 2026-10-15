@@ -1,0 +1,465 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-orders-container">
+
+    <div class="orders-header">
+        <h1>📦 My Orders</h1>
+        <p>Track your HostelHub orders in one place.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="orders-alert orders-alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    {% if orders %}
+        {% for order in orders %}
+        <div class="order-card">
+
+            <div class="order-top">
+                <div>
+                    <h3>Order #{{ order["id"] }}</h3>
+                    <p class="order-date">
+                        {{ order["created_at"] }}
+                    </p>
+                </div>
+
+                <span class="order-status {% if (order["status"] or "")|lower == "confirmed" %}order-status-confirmed{% endif %}">
+                    {% if (order["status"] or "")|lower == "confirmed" %}✓ {% endif %}{{ order["status"]|replace("_", " ")|title }}
+                </span>
+            </div>
+
+            {% set current_status = (order["status"] or "Pending")|lower %}
+            {% set tracking_steps = ["Pending", "Confirmed", "Processing", "Ready for Pickup / Out for Delivery", "Delivered"] %}
+            {% if current_status == "delivered" %}
+                {% set tracking_index = 4 %}
+            {% elif current_status in ["ready for pickup", "out for delivery"] %}
+                {% set tracking_index = 3 %}
+            {% elif current_status == "processing" %}
+                {% set tracking_index = 2 %}
+            {% elif current_status == "confirmed" %}
+                {% set tracking_index = 1 %}
+            {% else %}
+                {% set tracking_index = 0 %}
+            {% endif %}
+
+            {% if current_status in ["cancelled", "refund requested", "refunded"] %}
+                <div class="tracking-exception tracking-{{ current_status|replace(' ', '-') }}">
+                    {% if current_status == "cancelled" %}
+                        This order was cancelled.
+                    {% elif current_status == "refund requested" %}
+                        Refund requested. The admin will update the refund status here.
+                    {% else %}
+                        Refund completed for this order.
+                    {% endif %}
+                </div>
+            {% else %}
+                <section class="order-tracking" aria-label="Order tracking progress">
+                    <div class="tracking-heading">
+                        <strong>Order tracking</strong>
+                        <span>{{ order["status"]|replace("_", " ")|title }}</span>
+                    </div>
+                    <ol class="tracking-steps">
+                        {% for step in tracking_steps %}
+                        <li class="tracking-step {% if loop.index0 < tracking_index %}is-complete{% elif loop.index0 == tracking_index %}is-current{% endif %} {% if current_status == "confirmed" and loop.index0 == tracking_index %}is-confirmed{% endif %}">
+                            <span class="tracking-dot" aria-hidden="true">{% if loop.index0 < tracking_index or (current_status == "confirmed" and loop.index0 == tracking_index) %}✓{% else %}{{ loop.index }}{% endif %}</span>
+                            <span class="tracking-label">{{ step }}</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                    <p class="tracking-note">Status updates appear here as the admin processes your order.</p>
+                </section>
+            {% endif %}
+
+            <div class="order-details">
+                <p>
+                    <strong>Order Type:</strong>
+                    {{ order["order_type"]|title }}
+                </p>
+
+                <p>
+                    <strong>Payment:</strong>
+                    {% set pay_state = (order["payment_status"] or "Pending")|lower %}
+                    {% if pay_state in ["verified", "paid", "success", "successful", "completed"] %}
+                        <span class="payment-state payment-verified">✓ Paid · Verified</span>
+                    {% elif pay_state == "verification pending" %}
+                        <span class="payment-state payment-waiting">⏳ Waiting for verification</span>
+                    {% elif pay_state == "rejected" %}
+                        <span class="payment-state payment-rejected">↻ Payment needs attention</span>
+                    {% else %}
+                        <span class="payment-state payment-due">● Payment due</span>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <strong>Total Amount:</strong>
+                    ₹{{ "%.2f"|format(order["total_amount"]) }}
+                </p>
+
+                <p>
+                    <strong>Delivery Address:</strong>
+                    {{ order["delivery_address"] or "Address not provided for this order" }}
+                </p>
+
+                {% if order["estimated_delivery"] %}
+                <p>
+                    <strong>Estimated Delivery:</strong>
+                    {{ order["estimated_delivery"] }}
+                </p>
+                {% endif %}
+            </div>
+
+            {% set pay_state = (order["payment_status"] or "Pending")|lower %}
+            {% if pay_state in ["pending", "unpaid", "due", "failed", "rejected"] %}
+            <div class="order-pay-action">
+                <a class="order-pay-button" href="{{ url_for('order_payment_page', order_id=order['id']) }}">Pay Now · ₹{{ '%.2f'|format(order['total_amount'] or 0) }}</a>
+            </div>
+            {% elif pay_state == "verification pending" %}
+            <div class="order-pay-action"><a class="order-pay-button waiting-button" href="{{ url_for('order_payment_page', order_id=order['id']) }}">⏳ View verification status</a></div>
+            {% endif %}
+
+            <h4>Ordered Items</h4>
+
+            {% set items = order_items.get(order["id"], []) %}
+
+            {% if items %}
+                <div class="order-items">
+                    {% for item in items %}
+                    <div class="order-item">
+                        <span>
+                            {{ item["item_name"] }}
+                            × {{ item["quantity"] }}
+                        </span>
+
+                        <span>
+                            ₹{{ "%.2f"|format(
+                                (item["unit_price"] or item["price"]) *
+                                item["quantity"]
+                            ) }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No item details found for this order.</p>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+
+    {% else %}
+        <div class="empty-orders">
+            <div class="empty-icon">🛍️</div>
+            <h2>No orders yet</h2>
+            <p>Your placed orders will appear here.</p>
+
+            <a href="{{ url_for('marketplace') }}" class="shop-button">
+                Explore Marketplace
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+<style>
+.my-orders-container {
+    max-width: 1000px;
+    margin: 35px auto;
+    padding: 20px;
+}
+
+.orders-header {
+    margin-bottom: 28px;
+}
+
+.orders-header h1 {
+    margin-bottom: 8px;
+}
+
+.orders-header p {
+    color: #64748b;
+}
+
+.order-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.05);
+}
+
+.order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 16px;
+}
+
+.order-top h3 {
+    margin: 0 0 7px;
+}
+
+.order-date {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.order-status {
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 20px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.order-status-confirmed { background: #dbeafe; color: #1d4ed8; }
+
+.order-details {
+    padding: 14px 0;
+}
+
+.order-tracking {
+    margin: 18px 0 8px;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.tracking-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.tracking-heading span {
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tracking-steps {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tracking-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.tracking-step:not(:last-child)::after {
+    position: absolute;
+    z-index: 0;
+    top: 15px;
+    left: calc(50% + 17px);
+    width: calc(100% - 28px);
+    height: 2px;
+    content: "";
+    background: #cbd5e1;
+}
+
+.tracking-step.is-complete:not(:last-child)::after {
+    background: #22c55e;
+}
+
+.tracking-dot {
+    z-index: 1;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 2px solid #cbd5e1;
+    border-radius: 50%;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tracking-step.is-complete,
+.tracking-step.is-current {
+    color: #334155;
+}
+
+.tracking-step.is-complete .tracking-dot {
+    border-color: #22c55e;
+    background: #22c55e;
+    color: #fff;
+}
+
+.tracking-step.is-current .tracking-dot {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px #e0e7ff;
+    color: #4f46e5;
+}
+
+.tracking-step.is-confirmed .tracking-dot {
+    border-color: #2563eb;
+    background: #2563eb;
+    box-shadow: 0 0 0 4px #dbeafe;
+    color: #fff;
+}
+
+.tracking-label {
+    max-width: 130px;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.tracking-note {
+    margin: 16px 0 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.tracking-exception {
+    margin: 18px 0 8px;
+    padding: 13px 15px;
+    border-radius: 10px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-weight: 600;
+}
+
+.tracking-cancelled {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.tracking-refunded {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.order-details p {
+    margin: 10px 0;
+    overflow-wrap: anywhere;
+}
+
+.order-card h4 {
+    margin: 16px 0 10px;
+}
+
+.order-items {
+    border-top: 1px solid #e2e8f0;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.empty-orders {
+    text-align: center;
+    padding: 55px 20px;
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+}
+
+.empty-icon {
+    font-size: 55px;
+    margin-bottom: 15px;
+}
+
+.shop-button {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 12px 22px;
+    background: #4f46e5;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.orders-alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.orders-alert-danger,
+.orders-alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.orders-alert-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+@media (max-width: 600px) {
+    .my-orders-container {
+        padding: 12px;
+    }
+
+    .order-card {
+        padding: 16px;
+    }
+
+    .order-top {
+        flex-direction: column;
+    }
+
+    .order-item {
+        font-size: 14px;
+    }
+
+    .order-tracking {
+        padding: 14px 10px;
+    }
+
+    .tracking-steps {
+        gap: 2px;
+    }
+
+    .tracking-step:not(:last-child)::after {
+        left: calc(50% + 14px);
+        width: calc(100% - 20px);
+    }
+
+    .tracking-dot {
+        width: 28px;
+        height: 28px;
+    }
+
+    .tracking-label {
+        font-size: 10px;
+    }
+}
+
+.payment-state{display:inline-block;padding:5px 10px;border-radius:999px;font-size:13px;font-weight:750}.payment-verified{background:#dbeafe;color:#1d4ed8}.payment-waiting{background:#fef3c7;color:#92400e}.payment-rejected{background:#fee2e2;color:#991b1b}.payment-due{background:#e0e7ff;color:#3730a3}.waiting-button{background:#b7791f!important}.order-pay-action{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:13px 0 4px}.order-pay-button{display:inline-block;border:0;border-radius:9px;padding:11px 16px;background:#4f46e5;color:#fff;text-decoration:none;font-weight:700;cursor:pointer}.order-pay-button:hover{background:#4338ca}.order-pay-button:disabled{background:#94a3b8;cursor:not-allowed}.order-pay-action small{color:#64748b;font-size:12px}
+</style>
+<script>
+document.querySelectorAll("[data-payment-setup-missing]").forEach(button => {
+    button.addEventListener("click", () => alert("Admin has not added a UPI ID or QR code yet. Please try again after it is saved in Admin → Settings."));
+});
+</script>
+
+{% endblock %}

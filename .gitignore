@@ -1,0 +1,11 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.env
+instance/
+.pytest_cache/
+node_modules/
+.ppt-build/
+presentation/~$*.pptx
+static/uploads/payments/

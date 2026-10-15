@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Medical Management | HostelHub</title>
+    <style>
+        *{box-sizing:border-box}body{margin:0;padding:24px;background:#f4f6fb;color:#20243a;font:14px "Segoe UI",Arial,sans-serif}
+        .wrap{max-width:1280px;margin:auto}.top,.row,.actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+        h1{margin:0 0 6px;font-size:28px}.muted{color:#788099}.top{margin-bottom:20px}.card{background:#fff;border:1px solid #e7eaf2;border-radius:15px;padding:20px;margin:16px 0;box-shadow:0 5px 20px #24314d08}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}label{display:block;font-weight:650;margin-bottom:6px}input,select,textarea{width:100%;border:1px solid #d8ddea;border-radius:9px;padding:10px;background:#fff;color:inherit;font:inherit}textarea{min-height:76px;resize:vertical}.field.full{grid-column:1/-1}
+        .btn{display:inline-block;border:0;border-radius:9px;background:#6558f5;color:#fff;padding:10px 14px;text-decoration:none;font-weight:650;cursor:pointer}.btn.secondary{background:#e9eaf2;color:#33394d}.btn.good{background:#11835f}.btn.warn{background:#bb394b}
+        .flash{padding:12px 14px;border-radius:9px;margin:10px 0;background:#e9f7ef;color:#176342}.flash.error{background:#ffeded;color:#9e2732}
+        .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:740px}th,td{text-align:left;padding:11px;border-bottom:1px solid #edf0f5;vertical-align:top}th{font-size:11px;color:#646d81;text-transform:uppercase}td form{margin:0}.section-title{margin:0 0 14px;font-size:19px}
+        @media(max-width:600px){body{padding:12px}.card{padding:15px}h1{font-size:23px}}
+    </style>
+</head>
+<body><main class="wrap">
+    <header class="top"><div><h1>🏥 Medical Management</h1><div class="muted">Manage medical shops, medicine listings, doctors and student appointment requests.</div></div><a class="btn secondary" href="{{ url_for('admin_dashboard') }}">← Admin Dashboard</a></header>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ 'error' if category == 'error' else '' }}">{{ message }}</div>{% endfor %}{% endwith %}
+
+    <section class="card" id="shops"><h2 class="section-title">🏪 Medical Shops</h2>
+        <form method="post" class="grid">
+            <input type="hidden" name="action" value="add_shop">
+            <div><label>Shop name *</label><input name="name" required maxlength="160" placeholder="Campus Pharmacy"></div>
+            <div><label>Phone</label><input name="phone" type="tel" maxlength="30" placeholder="Contact number"></div>
+            <div><label>Address</label><input name="address" maxlength="240" placeholder="Shop location"></div>
+            <div><label>Opening hours</label><input name="opening_hours" maxlength="120" placeholder="9 AM – 9 PM"></div>
+            <div class="field full"><label>Description</label><textarea name="description" maxlength="1000" placeholder="Shop details"></textarea></div>
+            <div class="field full"><button class="btn" type="submit">+ Add Medical Shop</button></div>
+        </form>
+        <div class="table-wrap"><table><thead><tr><th>Shop</th><th>Contact</th><th>Address</th><th>Hours</th><th>Status</th><th></th></tr></thead><tbody>
+        {% for shop in medical_shops %}<tr><td><strong>{{ shop.name }}</strong><div class="muted">{{ shop.description or '' }}</div></td><td>{{ shop.phone or '—' }}</td><td>{{ shop.address or '—' }}</td><td>{{ shop.opening_hours or '—' }}</td><td>{{ 'Active' if shop.is_active else 'Hidden' }}</td><td><form method="post"><input type="hidden" name="action" value="toggle_shop"><input type="hidden" name="record_id" value="{{ shop.id }}"><button class="btn {{ 'warn' if shop.is_active else 'good' }}" type="submit">{{ 'Hide' if shop.is_active else 'Activate' }}</button></form></td></tr>
+        {% else %}<tr><td colspan="6" class="muted">No medical shops added yet.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+
+    <section class="card" id="medicines"><h2 class="section-title">💊 Medicines &amp; Health Items</h2>
+        <form method="post" enctype="multipart/form-data" class="grid"><input type="hidden" name="action" value="add_medicine">
+            <div><label>Medical shop *</label><select name="medical_shop_id" required><option value="">Select shop</option>{% for shop in medical_shops if shop.is_active %}<option value="{{ shop.id }}">{{ shop.name }}</option>{% endfor %}</select></div>
+            <div><label>Item name *</label><input name="name" required maxlength="160" placeholder="Medicine or healthcare item"></div>
+            <div><label>Price (₹) *</label><input name="price" type="number" min="0" step="0.01" required></div>
+            <div><label>Stock quantity *</label><input name="stock_quantity" type="number" min="0" step="1" required></div>
+            <div><label>Medicine image</label><input id="medicine_image" name="medicine_image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><small class="muted">JPG, PNG or WebP · up to 5 MB</small><img id="medicineImagePreview" alt="Medicine image preview" hidden style="max-width:180px;max-height:130px;object-fit:cover;border-radius:9px;margin-top:8px"></div>
+            <div class="field full"><label>Description / usage information</label><textarea name="description" maxlength="1000" placeholder="Product details"></textarea></div>
+            <div class="field full"><button class="btn" type="submit" {% if not medical_shops %}disabled{% endif %}>+ Add Medicine</button></div>
+        </form>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Medical shop</th><th>Price / stock</th><th>Student visibility</th></tr></thead><tbody>
+        {% for item in medicines %}<tr><td>{% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }}" style="width:48px;height:48px;object-fit:cover;border-radius:7px;vertical-align:middle;margin-right:8px">{% endif %}<strong>{{ item.name }}</strong><div class="muted">{{ item.description or '' }}</div></td><td>{{ item.shop_name }}</td><td><form method="post"><input type="hidden" name="action" value="update_medicine"><input type="hidden" name="medicine_id" value="{{ item.id }}"><label>Price</label><input name="price" type="number" min="0" step="0.01" value="{{ item.price }}" required><label style="margin-top:6px">Stock</label><input name="stock_quantity" type="number" min="0" step="1" value="{{ item.stock_quantity }}" required><button class="btn" type="submit" style="margin-top:7px">Save</button></form></td><td>{{ 'Visible' if item.is_available and item.stock_quantity > 0 else 'Unavailable' }}<form method="post" style="margin-top:7px"><input type="hidden" name="action" value="toggle_medicine"><input type="hidden" name="record_id" value="{{ item.id }}"><button class="btn {{ 'warn' if item.is_available else 'good' }}" type="submit">{{ 'Hide' if item.is_available else 'Show' }}</button></form></td></tr>
+        {% else %}<tr><td colspan="4" class="muted">No medicines added yet.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+
+    <section class="card" id="doctors"><h2 class="section-title">👩‍⚕️ Doctors &amp; Appointment Directory</h2>
+        <form method="post" class="grid"><input type="hidden" name="action" value="add_doctor">
+            <div><label>Doctor name *</label><input name="name" required maxlength="160"></div><div><label>Specialty</label><input name="specialty" maxlength="120" placeholder="General physician"></div>
+            <div><label>Clinic / hospital</label><input name="clinic_name" maxlength="160"></div><div><label>Phone</label><input name="phone" type="tel" maxlength="30"></div>
+            <div class="field full"><label>Availability</label><input name="availability" maxlength="240" placeholder="e.g. Mon–Fri, 10 AM–2 PM"></div>
+            <div class="field full"><button class="btn" type="submit">+ Add Doctor</button></div>
+        </form>
+        <div class="table-wrap"><table><thead><tr><th>Doctor</th><th>Specialty</th><th>Clinic</th><th>Contact</th><th>Availability</th><th></th></tr></thead><tbody>
+        {% for doctor in doctors %}<tr><td>{{ doctor.name }}</td><td>{{ doctor.specialty or '—' }}</td><td>{{ doctor.clinic_name or '—' }}</td><td>{{ doctor.phone or '—' }}</td><td>{{ doctor.availability or '—' }}</td><td><form method="post"><input type="hidden" name="action" value="toggle_doctor"><input type="hidden" name="record_id" value="{{ doctor.id }}"><button class="btn {{ 'warn' if doctor.is_active else 'good' }}" type="submit">{{ 'Hide' if doctor.is_active else 'Activate' }}</button></form></td></tr>
+        {% else %}<tr><td colspan="6" class="muted">No doctors listed yet.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+
+    <section class="card" id="facilities"><h2 class="section-title">🏥 Hospitals &amp; Clinics</h2>
+        <form method="post" class="grid"><input type="hidden" name="action" value="add_facility">
+            <div><label>Facility name *</label><input name="name" required maxlength="160" placeholder="Clinic or hospital"></div>
+            <div><label>Type *</label><select name="facility_type"><option>Clinic</option><option>Hospital</option><option>Emergency Centre</option></select></div>
+            <div><label>Phone</label><input name="phone" type="tel" maxlength="30"></div>
+            <div><label>Address</label><input name="address" maxlength="240"></div>
+            <div class="field full"><label>Opening hours</label><input name="opening_hours" maxlength="160"></div>
+            <div class="field full"><button class="btn" type="submit">+ Add Hospital / Clinic</button></div>
+        </form>
+        <div class="table-wrap"><table><thead><tr><th>Facility</th><th>Type</th><th>Contact</th><th>Address</th><th>Hours</th><th>Status</th><th></th></tr></thead><tbody>
+        {% for facility in facilities %}<tr><td>{{ facility.name }}</td><td>{{ facility.facility_type }}</td><td>{{ facility.phone or '—' }}</td><td>{{ facility.address or '—' }}</td><td>{{ facility.opening_hours or '—' }}</td><td>{{ 'Active' if facility.is_active else 'Hidden' }}</td><td><form method="post"><input type="hidden" name="action" value="toggle_facility"><input type="hidden" name="record_id" value="{{ facility.id }}"><button class="btn {{ 'warn' if facility.is_active else 'good' }}" type="submit">{{ 'Hide' if facility.is_active else 'Activate' }}</button></form></td></tr>
+        {% else %}<tr><td colspan="7" class="muted">No hospitals or clinics added yet.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+
+    <section class="card" id="medical-requests"><h2 class="section-title">🩺 Medical Help Requests</h2>
+        <div class="table-wrap"><table><thead><tr><th>Student</th><th>Request type</th><th>Details</th><th>Status / admin reply</th><th>Update</th></tr></thead><tbody>
+        {% for item in medical_requests %}<tr><td>{{ item.student_name }}<div class="muted">{{ item.student_phone or '' }}</div></td><td>{{ item.request_type }}</td><td>{{ item.description }}</td><td>{{ item.status }}{% if item.admin_notes %}<div class="muted">{{ item.admin_notes }}</div>{% endif %}</td><td><form method="post"><input type="hidden" name="action" value="medical_request_status"><input type="hidden" name="request_id" value="{{ item.id }}"><select name="status"><option {{ 'selected' if item.status == 'Pending' }}>Pending</option><option {{ 'selected' if item.status == 'In Progress' }}>In Progress</option><option {{ 'selected' if item.status == 'Resolved' }}>Resolved</option><option {{ 'selected' if item.status == 'Cancelled' }}>Cancelled</option></select><input name="admin_notes" maxlength="500" placeholder="Reply / notes" value="{{ item.admin_notes or '' }}" style="margin:6px 0"><button class="btn" type="submit">Save</button></form></td></tr>
+        {% else %}<tr><td colspan="5" class="muted">No medical help requests yet.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+
+    <section class="card" id="appointments"><h2 class="section-title">📅 Student Appointment Requests</h2>
+        <div class="table-wrap"><table><thead><tr><th>Student</th><th>Doctor / Clinic</th><th>Requested time</th><th>Reason</th><th>Status &amp; notes</th><th>Update</th></tr></thead><tbody>
+        {% for appointment in appointments %}<tr><td>{{ appointment.student_name }}<div class="muted">{{ appointment.student_phone or '' }}</div></td><td>{{ appointment.doctor_name }}<div class="muted">{{ appointment.clinic_name or '' }}</div></td><td>{{ appointment.preferred_at }}</td><td>{{ appointment.reason or '—' }}</td><td>{{ appointment.status }}{% if appointment.admin_notes %}<div class="muted">{{ appointment.admin_notes }}</div>{% endif %}</td><td><form method="post"><input type="hidden" name="action" value="appointment_status"><input type="hidden" name="appointment_id" value="{{ appointment.id }}"><select name="status"><option {{ 'selected' if appointment.status == 'Pending' }}>Pending</option><option {{ 'selected' if appointment.status == 'Confirmed' }}>Confirmed</option><option {{ 'selected' if appointment.status == 'Completed' }}>Completed</option><option {{ 'selected' if appointment.status == 'Cancelled' }}>Cancelled</option></select><input name="admin_notes" maxlength="500" placeholder="Reply / notes" value="{{ appointment.admin_notes or '' }}" style="margin:6px 0"><button class="btn" type="submit">Save</button></form></td></tr>
+        {% else %}<tr><td colspan="6" class="muted">No appointment requests yet.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+</main>
+<script>
+const medicineImageInput = document.getElementById("medicine_image");
+const medicineImagePreview = document.getElementById("medicineImagePreview");
+let medicineImagePreviewUrl = null;
+medicineImageInput?.addEventListener("change", function () {
+    const file = this.files && this.files[0];
+    if (!file) { medicineImagePreview.hidden = true; return; }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+        alert("Choose a JPG, PNG or WebP image up to 5 MB.");
+        this.value = "";
+        medicineImagePreview.hidden = true;
+        return;
+    }
+    if (medicineImagePreviewUrl) URL.revokeObjectURL(medicineImagePreviewUrl);
+    medicineImagePreviewUrl = URL.createObjectURL(file);
+    medicineImagePreview.src = medicineImagePreviewUrl;
+    medicineImagePreview.hidden = false;
+});
+</script>
+</body></html>

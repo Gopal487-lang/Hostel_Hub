@@ -1,0 +1,303 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}HostelHub — Everything Near You{% endblock %}</title>
+
+    <meta name="description"
+          content="HostelHub connects students with hostel facilities, nearby shops, food and local services.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body{% if session.get("role") == "student" %} class="student-logged-in"{% endif %}>
+
+    {% set logged_in = session.get('user_id') or session.get('user') %}
+
+    <div class="page-loader" id="pageLoader">
+        <div class="loader-logo">
+            <i class="fa-solid fa-house"></i>
+        </div>
+        <div class="loader-name">Hostel<span>Hub</span></div>
+        <div class="loader-line">
+            <div></div>
+        </div>
+    </div>
+
+    <div class="announcement-bar">
+        <p>
+            <i class="fa-solid fa-sparkles"></i>
+            Your hostel life, made easier.
+            <span>Everything you need, just around the corner.</span>
+        </p>
+    </div>
+
+    <header class="main-header">
+        <div class="header-container">
+
+            <a href="{{ url_for('home') }}" class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-house"></i>
+                </div>
+
+                <div class="brand-text">
+                    <span class="brand-name">Hostel<span>Hub</span></span>
+                    <span class="brand-tagline">YOUR CAMPUS. YOUR WORLD.</span>
+                </div>
+            </a>
+
+            <!-- Guest navigation menu; students use the dashboard's own drawer. -->
+            {% if not logged_in or session.get('role') != 'student' %}
+            <button class="mobile-menu-btn"
+                    id="mobileMenuBtn"
+                    aria-label="Open navigation"
+                    aria-expanded="false">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            {% endif %}
+
+            <!-- Main navigation: visible only before login -->
+            {% if not logged_in %}
+            <nav class="main-nav" id="mainNav">
+
+                <a href="{{ url_for('home') }}" class="nav-link">
+                    Home
+                </a>
+
+                <a href="{{ url_for('home') }}#services" class="nav-link">
+                    Services
+                </a>
+
+                <a href="{{ url_for('home') }}#marketplace" class="nav-link">
+                    Marketplace
+                </a>
+
+                <a href="{{ url_for('home') }}#hostel" class="nav-link">
+                    Hostel Life
+                </a>
+
+                <a href="{{ url_for('home') }}#about" class="nav-link">
+                    About
+                </a>
+
+                <div class="mobile-nav-actions">
+                    <a href="{{ url_for('login') }}" class="btn btn-outline">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Login
+                    </a>
+
+                    <a href="{{ url_for('register') }}" class="btn btn-primary">
+                        Get Started
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+            </nav>
+            {% else %}
+            <nav class="main-nav logged-in-nav" id="mainNav" hidden></nav>
+            {% endif %}
+
+            <div class="header-actions">
+
+                <!-- Dark mode remains available in both states -->
+                <button class="theme-toggle"
+                        id="themeToggle"
+                        aria-label="Toggle dark mode"
+                        title="Toggle Dark Mode">
+                    <i class="fa-regular fa-moon"></i>
+                </button>
+
+                {% if not logged_in %}
+
+                    <!-- Login and Get Started only before login -->
+                    <a href="{{ url_for('login') }}" class="btn btn-outline">
+                        Login
+                    </a>
+
+                    <a href="{{ url_for('register') }}" class="btn btn-primary">
+                        Get Started
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+
+                {% endif %}
+
+                <!-- Three-dot menu remains in both states -->
+                <div class="more-menu-container">
+
+                    <button type="button"
+                            class="more-menu-btn"
+                            id="moreMenuBtn"
+                            aria-label="Open more menu"
+                            aria-expanded="false"
+                            title="More options">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+
+                    <div class="more-menu-dropdown"
+                         id="moreMenuDropdown"
+                         hidden>
+
+                        {% if not logged_in %}
+
+                            <a href="{{ url_for('home') }}">
+                                <i class="fa-solid fa-house"></i>
+                                Home
+                            </a>
+
+                            <a href="{{ url_for('login') }}">
+                                <i class="fa-solid fa-right-to-bracket"></i>
+                                Login
+                            </a>
+
+                            <a href="{{ url_for('register') }}">
+                                <i class="fa-solid fa-user-plus"></i>
+                                Get Started
+                            </a>
+
+                        
+{% else %}
+
+    <a href="{{ url_for('home') }}">
+        <i class="fa-solid fa-house"></i>
+        Home
+    </a>
+
+    {% if session.get('role') == 'student' %}
+
+        <a href="{{ url_for('my_orders') }}">
+            <i class="fa-solid fa-bag-shopping"></i>
+            My Orders
+        </a>
+
+    {% endif %}
+
+    <a href="{{ url_for('logout') }}" class="logout-menu-link">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        Logout
+    </a>
+
+{% endif %}
+
+                        <button type="button" id="moreMenuThemeBtn">
+                            <i class="fa-solid fa-moon"></i>
+                            Toggle Dark Mode
+                        </button>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer" id="about">
+        <div class="container footer-main">
+
+            <div class="footer-brand">
+                <a href="{{ url_for('home') }}" class="brand">
+                    <div class="brand-icon">
+                        <i class="fa-solid fa-house"></i>
+                    </div>
+
+                    <div class="brand-text">
+                        <span class="brand-name">Hostel<span>Hub</span></span>
+                        <span class="brand-tagline">YOUR CAMPUS. YOUR WORLD.</span>
+                    </div>
+                </a>
+
+                <p>
+                    Your hostel life, simplified.
+                    Discover nearby shops, everyday essentials,
+                    trusted services and hostel facilities in one place.
+                </p>
+
+                <div class="footer-socials">
+                    <a href="#" aria-label="Instagram">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <a href="#" aria-label="Facebook">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </a>
+                    <a href="#" aria-label="LinkedIn">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-column">
+                <h4>Explore</h4>
+                <a href="{{ url_for('home') }}#services">Services</a>
+                <a href="{{ url_for('home') }}#marketplace">Marketplace</a>
+                <a href="{{ url_for('home') }}#hostel">Hostel Facilities</a>
+            </div>
+
+            <div class="footer-column">
+                <h4>Account</h4>
+                {% if not logged_in %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('register') }}">Student Registration</a>
+                {% else %}
+                    <a href="{{ url_for('logout') }}">
+    <i class="fa-solid fa-right-from-bracket"></i>
+    Logout
+</a>
+                {% endif %}
+            </div>
+
+            <div class="footer-column">
+                <h4>Need Help?</h4>
+                <a href="{{ url_for('home') }}#help">Help Centre</a>
+                <a href="{{ url_for('home') }}#help">Contact Us</a>
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+            <p>
+                © <span id="currentYear"></span> HostelHub.
+                Made with <i class="fa-solid fa-heart"></i> for student life.
+            </p>
+
+            <p>One platform. Everything nearby.</p>
+        </div>
+    </footer>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    {% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

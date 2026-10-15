@@ -1,0 +1,6 @@
+{% extends "provider_shell.html" %}
+{% block provider_content %}
+<section class="sk-panel"><div class="sk-panel-head"><div><span class="sk-eyebrow">SERVICE LISTINGS</span><h2>My Services</h2></div></div>
+{% if services %}<div class="sk-service-list">{% for service in services %}<article><div><strong>{{ service.name }}</strong><p>{{ service.description or 'No description added.' }}</p><small>₹{{ '%.2f'|format(service.price or 0) }} · {{ service.estimated_minutes or 30 }} min</small></div><form method="POST" action="{{ url_for('toggle_provider_service', service_id=service.id) }}"><button class="sk-badge {{ 'published' if service.is_available else 'pending' }}" type="submit">{{ 'Available · Turn off' if service.is_available else 'Unavailable · Turn on' }}</button></form></article>{% endfor %}</div>{% else %}<div class="sk-empty"><p>No services assigned to this account yet.</p></div>{% endif %}
+</section>
+{% endblock %}

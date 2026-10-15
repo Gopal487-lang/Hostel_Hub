@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Medical & Health | HostelHub{% endblock %}
+{% block content %}
+<style>
+.med-page{max-width:1180px;margin:30px auto;padding:0 18px}.med-hero{padding:28px;border-radius:18px;background:linear-gradient(120deg,#e8f6ff,#f0edff);margin-bottom:20px}.med-hero h1{margin:0 0 8px}.med-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.med-card{background:#fff;border:1px solid #e8ebf2;border-radius:14px;padding:17px;box-shadow:0 5px 18px #17213a08}.med-card h3{margin:0 0 8px}.med-muted{color:#69738a;font-size:13px;line-height:1.55}.med-section{margin:26px 0;scroll-margin-top:90px}.med-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.med-form label{display:block;font-weight:600;margin-bottom:5px}.med-form input,.med-form select,.med-form textarea{width:100%;padding:10px;border:1px solid #d8ddea;border-radius:9px;font:inherit}.med-form textarea{min-height:75px}.med-btn{display:inline-block;border:0;border-radius:9px;background:#6558f5;color:#fff;text-decoration:none;padding:10px 14px;font-weight:650;cursor:pointer}.med-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.med-actions form{margin:0}.med-btn.secondary{background:#fff;color:#5141dc;border:1px solid #dcd8ff}.med-btn:disabled{opacity:.55;cursor:not-allowed}.med-links{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}.med-links a{color:#5141dc;background:#fff;border:1px solid #dcd8ff;padding:8px 11px;border-radius:9px;text-decoration:none;font-weight:650;font-size:13px}.med-links a[aria-current="page"]{background:#6558f5;color:#fff;border-color:#6558f5}.med-flash{padding:11px 14px;border-radius:9px;background:#e9f7ef;margin:10px 0}.med-flash.error{background:#ffeded;color:#9e2732}.med-status{font-size:12px;font-weight:700;color:#6558f5}.med-empty{color:#69738a;padding:14px 0}.med-image{width:100%;height:170px;object-fit:cover;border-radius:10px;margin-bottom:12px;background:#f1f3f8}.med-image-wrap{position:relative}.med-image-wrap .med-image{display:block}.med-wishlist-button{position:absolute;right:9px;top:9px;width:42px;height:42px;padding:0;display:grid;place-items:center;border-radius:50%;font-size:21px;line-height:1;box-shadow:0 3px 12px #15203a25}.med-wishlist-button.is-saved{color:#d72e64;background:#fff1f5;border-color:#ffd2df}.med-emergency{border-color:#ffc8c8;background:#fff6f6}.med-alert{color:#9b2634;font-weight:700}@media(max-width:600px){.med-hero{padding:20px}}
+</style>
+<main class="med-page">
+    <section class="med-hero">
+        <h1>Medical &amp; Health 🏥</h1>
+        <p>Find campus medical shops, health items, clinics and doctors. Send requests and track replies here.</p>
+        <a class="med-btn" href="{{ url_for('student_dashboard') }}#section-medical">← Student Dashboard</a>
+        <nav class="med-links" aria-label="Medical pages">
+            <a href="{{ url_for('student_medical_page', section='shops') }}" {{ 'aria-current=page' if page == 'shops' }}>Medical Shops</a>
+            <a href="{{ url_for('student_medical_page', section='medicines') }}" {{ 'aria-current=page' if page == 'medicines' }}>Medicines</a>
+            <a href="{{ url_for('student_medical_page', section='facilities') }}" {{ 'aria-current=page' if page == 'facilities' }}>Hospitals &amp; Clinics</a>
+            <a href="{{ url_for('student_medical_page', section='appointments') }}" {{ 'aria-current=page' if page == 'appointments' }}>Doctor Appointment</a>
+            <a href="{{ url_for('student_medical_page', section='help') }}" {{ 'aria-current=page' if page == 'help' }}>Medical Help</a>
+            <a href="{{ url_for('student_medical_page', section='requests') }}" {{ 'aria-current=page' if page == 'requests' }}>My Requests</a>
+            <a href="{{ url_for('student_medical_page', section='emergency') }}" {{ 'aria-current=page' if page == 'emergency' }}>Emergency</a>
+        </nav>
+    </section>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="med-flash {{ 'error' if category == 'error' else '' }}">{{ message }}</div>{% endfor %}{% endwith %}
+
+    {% if page == 'shops' %}<section class="med-section" id="shops"><h2>Medical Shops</h2><div class="med-grid">
+        {% for shop in medical_shops %}<article class="med-card"><h3>🏪 {{ shop.name }}</h3><p class="med-muted">{{ shop.description or '' }}</p><p class="med-muted">{{ shop.address or 'Address not provided' }}{% if shop.opening_hours %}<br>{{ shop.opening_hours }}{% endif %}</p>{% if shop.phone %}<a class="med-btn" href="tel:{{ shop.phone }}">Call {{ shop.phone }}</a>{% endif %}</article>
+        {% else %}<p class="med-empty">Medical shop details will appear here when the admin adds them.</p>{% endfor %}
+    </div></section>{% endif %}
+
+    {% if page == 'medicines' %}<section class="med-section" id="medicines"><h2>Medicines &amp; Health Items</h2><div class="med-grid">
+        {% for item in medicines %}<article class="med-card">
+            <div class="med-image-wrap">
+            {% if item.image_url %}<img class="med-image" src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><div class="med-image med-empty" hidden>Image unavailable</div>{% else %}<div class="med-image med-empty">💊 Image not provided</div>{% endif %}
+            <button class="med-btn secondary med-wishlist-button {{ 'is-saved' if item.id in medical_wishlist_ids else '' }}" type="button" data-medicine-id="{{ item.id }}" aria-label="{{ 'Remove ' if item.id in medical_wishlist_ids else 'Add ' }}{{ item.name }} {{ 'from' if item.id in medical_wishlist_ids else 'to' }} wishlist" aria-pressed="{{ 'true' if item.id in medical_wishlist_ids else 'false' }}">{{ '♥' if item.id in medical_wishlist_ids else '♡' }}</button>
+            </div>
+            <h3>{{ item.name }}</h3><p class="med-muted">{{ item.description or 'Ask the listed medical shop for product details.' }}</p><p><strong>₹{{ '%.2f'|format(item.price) }}</strong> · {{ item.stock_quantity }} in stock</p><p class="med-muted">{{ item.shop_name }}{% if item.shop_address %} · {{ item.shop_address }}{% endif %}</p>
+            <div class="med-actions">
+                <a class="med-btn secondary" href="{{ url_for('medical_medicine_details', medicine_id=item.id) }}">View</a>
+                <form method="post" action="{{ url_for('add_medicine_to_cart', medicine_id=item.id) }}"><button class="med-btn" type="submit">🛒 Add to Cart</button></form>
+                <a class="med-btn" href="{{ url_for('medical_checkout', buy_now=item.id) }}">⚡ Buy Now</a>
+            </div>{% if item.shop_phone %}<p><a class="med-muted" href="tel:{{ item.shop_phone }}">Contact {{ item.shop_name }}</a></p>{% endif %}
+        </article>{% else %}<p class="med-empty">No in-stock health items are listed yet.</p>{% endfor %}
+    </div></section>{% endif %}
+
+    {% if page == 'emergency' %}<section class="med-section" id="emergency"><article class="med-card med-emergency"><h2>🚑 Emergency Assistance</h2><p class="med-alert">If someone is in immediate danger or needs urgent care, call emergency services now. Do not wait for an app reply.</p><p class="med-muted">In India, call 112. You can also contact your hostel warden.</p><a class="med-btn" href="tel:112">Call 112</a></article></section>{% endif %}
+
+    {% if page == 'facilities' %}<section class="med-section" id="facilities"><h2>Hospitals &amp; Clinics</h2><div class="med-grid">
+        {% for facility in facilities %}<article class="med-card"><h3>🏥 {{ facility.name }}</h3><p class="med-muted">{{ facility.facility_type }}{% if facility.address %}<br>{{ facility.address }}{% endif %}{% if facility.opening_hours %}<br>{{ facility.opening_hours }}{% endif %}</p>{% if facility.phone %}<a class="med-btn" href="tel:{{ facility.phone }}">Call {{ facility.phone }}</a>{% endif %}</article>
+        {% else %}<p class="med-empty">Hospitals and clinics will appear when the admin adds their details.</p>{% endfor %}
+    </div></section>{% endif %}
+
+    {% if page == 'appointments' %}<section class="med-section" id="appointments"><h2>Doctor Appointment</h2><div class="med-grid">
+        <article class="med-card"><h3>Request an appointment</h3>{% if doctors %}<form class="med-form" method="post" action="{{ url_for('request_medical_appointment') }}"><div><label>Doctor *</label><select name="doctor_id" required><option value="">Choose a doctor</option>{% for doctor in doctors %}<option value="{{ doctor.id }}">{{ doctor.name }}{% if doctor.specialty %} — {{ doctor.specialty }}{% endif %}</option>{% endfor %}</select></div><div><label>Preferred date &amp; time *</label><input name="preferred_at" type="datetime-local" required></div><div style="grid-column:1/-1"><label>Reason (optional)</label><textarea name="reason" maxlength="1000"></textarea></div><div><button class="med-btn" type="submit">Send Appointment Request</button></div></form>{% else %}<p class="med-muted">Booking opens when the admin adds doctors.</p>{% endif %}</article>
+        {% for doctor in doctors %}<article class="med-card"><h3>👩‍⚕️ {{ doctor.name }}</h3><p class="med-muted">{{ doctor.specialty or 'Doctor' }}{% if doctor.clinic_name %}<br>{{ doctor.clinic_name }}{% endif %}{% if doctor.availability %}<br>{{ doctor.availability }}{% endif %}</p>{% if doctor.phone %}<a class="med-btn" href="tel:{{ doctor.phone }}">Call {{ doctor.phone }}</a>{% endif %}</article>{% endfor %}
+    </div></section>{% endif %}
+
+    {% if page == 'help' %}<section class="med-section" id="help"><article class="med-card"><h2>🩺 Ask for Medical Help</h2><p class="med-muted">Send a non-emergency request to the hostel admin and track its status below. For urgent emergencies, call 112.</p><form class="med-form" method="post" action="{{ url_for('submit_medical_request') }}"><div><label>Request type</label><select name="request_type"><option>Medical Help</option><option>Emergency Assistance</option></select></div><div style="grid-column:1/-1"><label>What help do you need? *</label><textarea name="description" maxlength="1500" required placeholder="Describe your request"></textarea></div><div><button class="med-btn" type="submit">Send Medical Request</button></div></form></article></section>{% endif %}
+
+    {% if page == 'requests' %}<section class="med-section" id="requests"><h2>My Medical Requests</h2><div class="med-grid">
+        {% for item in medical_requests %}<article class="med-card"><h3>{{ item.request_type }}</h3><p class="med-muted">{{ item.description }}<br>Submitted: {{ item.created_at }}</p><span class="med-status">{{ item.status }}</span>{% if item.admin_notes %}<p class="med-muted">Admin reply: {{ item.admin_notes }}</p>{% endif %}</article>
+        {% else %}<p class="med-empty">You have no medical help requests yet.</p>{% endfor %}
+        {% for item in appointments %}<article class="med-card"><h3>📅 {{ item.doctor_name }}</h3><p class="med-muted">{{ item.clinic_name or '' }}<br>{{ item.preferred_at }}{% if item.reason %}<br>{{ item.reason }}{% endif %}</p><span class="med-status">Appointment: {{ item.status }}</span>{% if item.admin_notes %}<p class="med-muted">Admin reply: {{ item.admin_notes }}</p>{% endif %}</article>{% endfor %}
+    </div></section>{% endif %}
+</main>
+{% if page == 'medicines' %}<script>
+document.querySelectorAll('.med-wishlist-button').forEach(button => button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+        const response = await fetch(`/medical/wishlist/toggle/${button.dataset.medicineId}`, {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}});
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'Could not update wishlist.');
+        button.textContent = result.action === 'added' ? '♥' : '♡';
+        button.classList.toggle('is-saved', result.action === 'added');
+        button.setAttribute('aria-pressed', result.action === 'added' ? 'true' : 'false');
+    } catch (error) { alert(error.message || 'Could not connect. Please try again.'); }
+    finally { button.disabled = false; }
+}));
+</script>{% endif %}
+{% endblock %}

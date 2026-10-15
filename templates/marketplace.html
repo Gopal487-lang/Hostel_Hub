@@ -1,0 +1,773 @@
+{% extends "base.html" %}
+
+{% block title %}Marketplace | HostelHub{% endblock %}
+
+{% block extra_head %}
+<style>
+    .marketplace-page {
+        max-width: 1440px;
+        margin: auto;
+        padding: 35px 5% 70px;
+        color: var(--text-primary, #172033);
+    }
+
+    .marketplace-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 38px;
+        margin-bottom: 30px;
+        border-radius: 24px;
+        background: linear-gradient(125deg, #173b8f, #6754db 65%, #9476f5);
+        color: #fff;
+    }
+
+    .marketplace-hero::after {
+        content: "🛍️";
+        position: absolute;
+        right: 7%;
+        top: 50%;
+        transform: translateY(-50%) rotate(-12deg);
+        font-size: clamp(65px, 10vw, 130px);
+        opacity: .2;
+        pointer-events: none;
+    }
+
+    .marketplace-hero .eyebrow {
+        display: inline-block;
+        padding: 7px 12px;
+        border: 1px solid rgba(255,255,255,.35);
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .marketplace-hero h1 {
+        max-width: 650px;
+        margin: 18px 0 12px;
+        font-size: clamp(28px, 4vw, 43px);
+        line-height: 1.2;
+    }
+
+    .marketplace-hero p {
+        max-width: 560px;
+        margin: 0;
+        line-height: 1.8;
+        color: rgba(255,255,255,.88);
+    }
+
+    .marketplace-search {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 760px;
+        margin: 28px auto 35px;
+        padding: 8px 10px 8px 18px;
+        border: 1px solid #e2e7ef;
+        border-radius: 15px;
+        background: var(--card-bg, #fff);
+        box-shadow: 0 8px 30px rgba(20,35,70,.07);
+    }
+
+    .marketplace-search i {
+        color: #7c8496;
+    }
+
+    .marketplace-search input {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+    }
+
+    .marketplace-search button {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        background: #5b4bdb;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .marketplace-section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .marketplace-section-heading h2 {
+        margin: 0 0 5px;
+        font-size: 25px;
+    }
+
+    .marketplace-section-heading p {
+        margin: 0;
+        color: var(--text-secondary, #747d90);
+        font-size: 14px;
+    }
+
+    .marketplace-count {
+        padding: 9px 14px;
+        border-radius: 10px;
+        background: #eeeaff;
+        color: #5946cb;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .marketplace-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .marketplace-product {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--border-color, #e9edf4);
+        border-radius: 18px;
+        background: var(--card-bg, #fff);
+        transition: transform .25s ease, box-shadow .25s ease;
+        animation: marketCardIn .45s ease both;
+    }
+
+    .marketplace-product:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 15px 35px rgba(24,37,75,.12);
+    }
+
+    .marketplace-product-image {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 205px;
+        padding: 15px;
+        background: var(--input-bg, #f6f7fb);
+    }
+
+    .marketplace-product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: transform .3s ease;
+    }
+
+    .marketplace-product:hover .marketplace-product-image img {
+        transform: scale(1.05);
+    }
+
+    .marketplace-product-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: #8b82dc;
+        font-size: 55px;
+    }
+
+    .marketplace-wishlist {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border: 1px solid #e7e9f0;
+        border-radius: 50%;
+        background: #fff;
+        color: #687086;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    .marketplace-wishlist:hover,
+    .marketplace-wishlist.active {
+        color: #e54870;
+        border-color: #f5c5d1;
+        background: #fff0f4;
+    }
+
+    .marketplace-product-info {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        padding: 17px;
+    }
+
+    .marketplace-category {
+        margin-bottom: 8px;
+        color: #6a58d7;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .7px;
+        text-transform: uppercase;
+    }
+
+    .marketplace-product-name {
+        display: -webkit-box;
+        min-height: 44px;
+        margin: 0 0 8px;
+        overflow: hidden;
+        color: var(--text-primary, #172033);
+        font-size: 16px;
+        line-height: 1.4;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .marketplace-product-name a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .marketplace-product-name a:hover {
+        color: #6754db;
+    }
+
+    .marketplace-shop {
+        margin: 0 0 15px;
+        color: var(--text-secondary, #7b8496);
+        font-size: 12px;
+    }
+
+    .marketplace-product-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: auto;
+        padding-top: 13px;
+        border-top: 1px solid var(--border-color, #edf0f5);
+    }
+
+    .marketplace-price {
+        color: var(--text-primary, #172033);
+        font-size: 21px;
+        font-weight: 800;
+    }
+
+    .marketplace-actions {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .marketplace-buy-now {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 11px 13px;
+        border: 1px solid #e0a32e;
+        border-radius: 10px;
+        background: #fff8e7;
+        color: #8a5700;
+        font-size: 12px;
+        font-weight: 750;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .marketplace-buy-now:hover { background: #ffefc4; }
+
+    .marketplace-add-cart {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 11px 13px;
+        border: none;
+        border-radius: 10px;
+        background: #5b4bdb;
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .2s ease;
+    }
+
+    .marketplace-add-cart:hover {
+        background: #4635c3;
+    }
+
+    .marketplace-view-product {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 12px;
+        border: 1px solid #dcd8ff;
+        border-radius: 10px;
+        background: #f5f3ff;
+        color: #5946cb;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .marketplace-view-product:hover { background: #eeeaff; }
+
+    .marketplace-empty {
+        grid-column: 1 / -1;
+        padding: 55px 20px;
+        border: 1px dashed #d7dbea;
+        border-radius: 18px;
+        text-align: center;
+        color: var(--text-secondary, #7b8496);
+    }
+
+    .marketplace-empty i {
+        margin-bottom: 15px;
+        font-size: 42px;
+        color: #9b91e8;
+    }
+
+    .marketplace-empty h3 {
+        margin: 0 0 8px;
+        color: var(--text-primary, #172033);
+    }
+
+    .marketplace-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        color: var(--text-secondary, #737c90);
+        font-size: 14px;
+        text-decoration: none;
+    }
+
+    .marketplace-back:hover {
+        color: #6754db;
+    }
+
+    @keyframes marketCardIn {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .marketplace-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 760px) {
+        .marketplace-page {
+            padding: 24px 4% 50px;
+        }
+
+        .marketplace-hero {
+            padding: 27px 23px;
+        }
+
+        .marketplace-hero::after {
+            right: 3%;
+            top: 20px;
+            transform: none;
+            font-size: 65px;
+        }
+
+        .marketplace-hero h1 {
+            max-width: 80%;
+        }
+
+        .marketplace-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .marketplace-product-image {
+            height: 155px;
+        }
+
+        .marketplace-product-info {
+            padding: 12px;
+        }
+
+        .marketplace-product-bottom {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .marketplace-actions {
+            width: 100%;
+        }
+
+        .marketplace-actions .marketplace-add-cart,
+        .marketplace-actions .marketplace-buy-now {
+            flex: 1;
+            width: 50%;
+        }
+
+        .marketplace-price {
+            font-size: 19px;
+        }
+
+        .marketplace-section-heading h2 {
+            font-size: 21px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .marketplace-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .marketplace-product-image {
+            height: 210px;
+        }
+    }
+.marketplace-product-sizes{margin:9px 0;color:#6b6482;font-size:12px;line-height:1.5}.marketplace-product-sizes>strong{display:block;color:#423a61;margin-bottom:6px}.marketplace-size-options{display:flex;flex-wrap:wrap;gap:6px}.marketplace-size-option{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border:1px solid #d6e8df;border-radius:8px;background:#effaf3;color:#146c43;font-size:11px;font-weight:700}.marketplace-size-option small{font-size:9px;font-weight:600}.marketplace-size-option.is-out-of-stock{border-color:#f0d4d7;background:#fff3f3;color:#a9444d}.marketplace-size-option.is-out-of-stock small{color:#a9444d}</style>
+{% endblock %}
+
+{% block content %}
+<main class="marketplace-page">
+
+    <a href="{{ url_for('student_dashboard') }}"
+       class="marketplace-back">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+
+    <section class="marketplace-hero">
+        <span class="eyebrow">HOSTELHUB MARKETPLACE</span>
+        <h1>Everything You Need, All in One Place.</h1>
+        <p>
+            Discover everyday essentials, snacks, stationery and more
+            from shops around your campus.
+        </p>
+    </section>
+
+    <div class="marketplace-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+            type="search"
+            id="marketplaceSearch"
+            placeholder="Search products, categories or shops..."
+            aria-label="Search products"
+        >
+        <button type="button" id="marketplaceSearchButton">Search</button>
+    </div>
+
+    <div class="marketplace-section-heading">
+        <div>
+            <h2>{% if category_filter == 'food-snacks' %}Food &amp; Snacks{% elif category_filter == 'clothing-tailoring' %}Clothing &amp; Tailoring{% else %}Explore Products{% endif %}</h2>
+            <p>{% if category_filter %}Browse published listings in this category from campus shops.{% else %}Find what you need from your campus shops.{% endif %}</p>
+        </div>
+        <span class="marketplace-count">
+            <span id="marketplaceVisibleCount">{{ products|length }}</span> products
+        </span>
+    </div>
+
+    <section class="marketplace-grid" id="marketplaceGrid">
+
+        {% for product in products %}
+        <article
+            class="marketplace-product"
+            data-marketplace-product
+            data-search-text="{{ (product['name'] ~ ' ' ~ (product['description'] or '') ~ ' ' ~ (product['category_name'] or '') ~ ' ' ~ (product['shop_name'] or ''))|lower }}"
+        >
+            <div class="marketplace-product-image">
+                <a href="{{ url_for('product_details', product_id=product['id']) }}"
+                   style="display:block;width:100%;height:100%;"
+                   aria-label="View {{ product['name'] }}">
+                    {% if product['image_url'] %}
+                        <img
+                            src="{{ product['image_url'] }}"
+                            alt="{{ product['name'] }}"
+                            loading="lazy"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+                        <span class="marketplace-product-placeholder"
+                              style="display:none;">
+                            <i class="fa-solid fa-box-open"></i>
+                        </span>
+                    {% else %}
+                        <span class="marketplace-product-placeholder">
+                            <i class="fa-solid fa-box-open"></i>
+                        </span>
+                    {% endif %}
+                </a>
+
+                <button
+                    type="button"
+                    class="marketplace-wishlist hub-wishlist-button {% if product['id'] in wishlist_ids %}active{% endif %}"
+                    data-wishlist-id="{{ product['id'] }}"
+                    aria-label="Add {{ product['name'] }} to wishlist"
+                    title="Wishlist"
+                >
+                    <i class="{% if product['id'] in wishlist_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+                </button>
+            </div>
+
+            <div class="marketplace-product-info">
+                <span class="marketplace-category">
+                    {{ product['category_name'] or 'Campus Essentials' }}
+                </span>
+
+                <h3 class="marketplace-product-name">
+                    <a href="{{ url_for('product_details', product_id=product['id']) }}">
+                        {{ product['name'] }}
+                    </a>
+                </h3>
+
+                {% if product['category_slug'] == 'clothing-tailoring' and (product['sizes'] or product['out_of_stock_sizes']) %}
+                <div class="marketplace-product-sizes" aria-label="Clothing size availability">
+                    <strong>Size availability</strong>
+                    <div class="marketplace-size-options">
+                        {% for size in (product['sizes'] or '').split(',') %}
+                            {% if size.strip() %}<span class="marketplace-size-option is-available">{{ size.strip() }} <small>Available</small></span>{% endif %}
+                        {% endfor %}
+                        {% for size in (product['out_of_stock_sizes'] or '').split(',') %}
+                            {% if size.strip() %}<span class="marketplace-size-option is-out-of-stock"><s>{{ size.strip() }}</s> <small>Out of stock</small></span>{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <p class="marketplace-shop">
+                    <i class="fa-solid fa-store"></i>
+                    {{ product['shop_name'] }}
+                </p>
+
+                <div class="marketplace-product-bottom">
+                    <span class="marketplace-price">
+                        ₹{{ "%.2f"|format(product['price']|float) }}
+                    </span>
+
+            <a class="marketplace-view-product" href="{{ url_for('product_details', product_id=product['id']) }}">
+                <i class="fa-solid fa-eye"></i> View
+            </a>
+
+                    <div class="marketplace-actions">
+                        <button
+                            type="button"
+                            class="marketplace-add-cart hub-add-cart-button"
+                            data-cart-product-id="{{ product['id'] }}"
+                        >
+                            <i class="fa-solid fa-cart-plus"></i>
+                            Add to Cart
+                        </button>
+                        <a class="marketplace-buy-now" href="{{ url_for('checkout', buy_now=product['id']) }}">
+                            <i class="fa-solid fa-bolt"></i>
+                            Buy Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </article>
+        {% else %}
+        <div class="marketplace-empty" id="marketplaceEmpty">
+            <i class="fa-solid fa-basket-shopping"></i>
+            <h3>{% if category_filter == 'food-snacks' %}No food listings yet{% elif category_filter == 'clothing-tailoring' %}No clothing listings yet{% else %}No products available right now{% endif %}</h3>
+            <p>{% if category_filter %}Published {{ 'food' if category_filter == 'food-snacks' else 'clothing' }} products from active campus shops will appear here.{% else %}Published products from active campus shops will appear here.{% endif %}</p>
+        </div>
+        {% endfor %}
+
+        <div class="marketplace-empty"
+             id="marketplaceNoResults"
+             style="display:none;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <h3>No matching products found</h3>
+            <p>Try searching with a different product or shop name.</p>
+        </div>
+
+    </section>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("marketplaceSearch");
+    const searchButton = document.getElementById("marketplaceSearchButton");
+    const cards = Array.from(document.querySelectorAll("[data-marketplace-product]"));
+    const count = document.getElementById("marketplaceVisibleCount");
+    const noResults = document.getElementById("marketplaceNoResults");
+
+    function filterMarketplace() {
+        const query = searchInput.value.trim().toLowerCase();
+        let visible = 0;
+
+        cards.forEach(function (card) {
+            const text = card.dataset.searchText || "";
+            const matches = text.includes(query);
+
+            card.style.display = matches ? "" : "none";
+
+            if (matches) visible++;
+        });
+
+        count.textContent = visible;
+        noResults.style.display = (cards.length > 0 && visible === 0) ? "block" : "none";
+    }
+
+    searchInput.addEventListener("input", filterMarketplace);
+    searchButton.addEventListener("click", filterMarketplace);
+
+    searchInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") filterMarketplace();
+    });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // =====================================
+    // ADD TO CART
+    // =====================================
+
+    document.querySelectorAll(".hub-add-cart-button").forEach(function (button) {
+
+        button.addEventListener("click", async function () {
+
+            const productId = button.dataset.cartProductId;
+
+            if (!productId) {
+                alert("Product ID nahi mila!");
+                return;
+            }
+
+            button.disabled = true;
+
+            try {
+                const response = await fetch(
+                    `/cart/add/${productId}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    alert(data.message || "Product cart mein add nahi hua.");
+                    return;
+                }
+
+                alert("✅ " + data.message);
+
+                // Update cart count if present
+                const cartCount = document.querySelector(
+                    "#cartCount, .cart-count, [data-cart-count]"
+                );
+
+                if (cartCount && data.cart_count !== undefined) {
+                    cartCount.textContent = data.cart_count;
+                }
+
+                button.innerHTML =
+                    '<i class="fa-solid fa-check"></i> Added!';
+
+                setTimeout(function () {
+                    button.innerHTML =
+                        '<i class="fa-solid fa-cart-plus"></i> Add to Cart';
+                }, 1500);
+
+            } catch (error) {
+                console.error("Add to Cart Error:", error);
+                alert("Request fail hua. Flask server aur login check karo.");
+            } finally {
+                button.disabled = false;
+            }
+
+        });
+
+    });
+
+
+    // =====================================
+    // WISHLIST ADD / REMOVE
+    // =====================================
+
+    document.querySelectorAll(".hub-wishlist-button").forEach(function (button) {
+
+        button.addEventListener("click", async function () {
+
+            const productId = button.dataset.wishlistId;
+
+            if (!productId) {
+                alert("Product ID nahi mila!");
+                return;
+            }
+
+            button.disabled = true;
+
+            try {
+                const response = await fetch(
+                    `/wishlist/toggle/${productId}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    alert(data.message || "Wishlist update nahi hui.");
+                    return;
+                }
+
+                const icon = button.querySelector("i");
+
+                if (data.action === "added") {
+                    button.classList.add("active");
+
+                    if (icon) {
+                        icon.classList.remove("fa-regular");
+                        icon.classList.add("fa-solid");
+                    }
+                } else {
+                    button.classList.remove("active");
+
+                    if (icon) {
+                        icon.classList.remove("fa-solid");
+                        icon.classList.add("fa-regular");
+                    }
+                }
+
+                alert("❤️ " + data.message);
+
+            } catch (error) {
+                console.error("Wishlist Error:", error);
+                alert("Request fail hui. Flask server aur login check karo.");
+            } finally {
+                button.disabled = false;
+            }
+
+        });
+
+    });
+
+});
+</script>
+{% endblock %}

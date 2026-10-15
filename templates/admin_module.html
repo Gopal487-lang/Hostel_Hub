@@ -1,0 +1,1005 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+.module-page {
+    padding: 24px;
+    color: var(--text-primary, #1e293b);
+}
+
+.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 24px;
+}
+
+.module-header h1 {
+    margin: 0 0 6px;
+    font-size: 27px;
+}
+
+.module-header p {
+    margin: 0;
+    opacity: .7;
+}
+
+.module-card {
+    padding: 20px;
+    border-radius: 15px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    margin-bottom: 22px;
+    box-shadow: 0 5px 18px rgba(0,0,0,.04);
+}
+
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.module-stat {
+    padding: 18px;
+    border-radius: 12px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.module-stat span {
+    display: block;
+    opacity: .7;
+    font-size: 13px;
+}
+
+.module-stat strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 25px;
+}
+
+.module-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+
+.module-form label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.module-form input,
+.module-form select,
+.module-form textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    background: var(--card-bg, white);
+    color: inherit;
+}
+
+.module-form textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.module-btn {
+    display: inline-block;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 9px;
+    background: #4f46e5;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.module-btn.secondary {
+    background: #64748b;
+}
+
+.module-btn.danger {
+    background: #dc2626;
+}
+
+.module-btn.success {
+    background: #15803d;
+}
+
+.module-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.module-table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+}
+
+.module-table th,
+.module-table td {
+    text-align: left;
+    vertical-align: top;
+    padding: 13px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.module-table th {
+    font-size: 12px;
+    text-transform: uppercase;
+    background: var(--surface-bg, #f8fafc);
+}
+
+.module-table td {
+    font-size: 13px;
+}
+
+.module-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.module-actions form {
+    margin: 0;
+}
+
+.module-muted {
+    opacity: .7;
+    font-size: 12px;
+}
+
+.module-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+}
+
+.module-inline select {
+    padding: 8px;
+    border-radius: 7px;
+    max-width: 150px;
+}
+
+@media(max-width:650px) {
+    .module-page {
+        padding: 13px;
+    }
+
+    .module-header h1 {
+        font-size: 22px;
+    }
+}
+</style>
+
+<div class="module-page">
+
+    <div class="module-header">
+        <div>
+            <h1>{{ title }}</h1>
+            <p>Manage your HostelHub campus operations.</p>
+        </div>
+
+        <a href="{{ url_for('admin_dashboard') }}"
+           class="module-btn secondary">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+
+    <!-- SERVICES -->
+
+    {% if module == 'services' %}
+
+    <div class="module-card">
+        <h2>➕ Add New Service</h2>
+
+        <form method="POST"
+              action="{{ url_for('admin_services') }}"
+              class="module-form">
+
+            <div>
+                <label>Service Name *</label>
+                <input name="name" required
+                       placeholder="e.g. Laundry Service">
+            </div>
+
+            <div>
+                <label>Category</label>
+                <select name="category_id" required>
+                    <option value="">Select Category</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Shop / Provider</label>
+                <select name="shop_id">
+                    <option value="">Not assigned</option>
+                    {% for shop in shops %}
+                    <option value="{{ shop.id }}">
+                        {{ shop.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Assign Provider Account</label>
+                <select name="provider_id">
+                    <option value="">Not assigned</option>
+                    {% for provider in providers %}
+                    <option value="{{ provider.id }}">{{ provider.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Price (₹)</label>
+                <input type="number" name="price"
+                       min="0" step="0.01" value="0" required>
+            </div>
+
+            <div>
+                <label>Estimated Minutes</label>
+                <input type="number" name="estimated_minutes"
+                       min="1" value="30" required>
+            </div>
+
+            <div>
+                <label>Description</label>
+                <textarea name="description"
+                          placeholder="Describe the service"></textarea>
+            </div>
+
+            <div style="align-self:end">
+                <button class="module-btn" type="submit">
+                    Add Service
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="module-card">
+        <h2>Available Services</h2>
+
+        <div class="module-table-wrap">
+            <table class="module-table">
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Category / Shop</th>
+                        <th>Price</th>
+                        <th>Time</th>
+                        <th>Availability</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for service in services %}
+                    <tr>
+                        <td>
+                            <strong>{{ service.name }}</strong>
+                            <div class="module-muted">
+                                {{ service.description or '' }}
+                            </div>
+                        </td>
+
+                        <td>
+                            {{ service.category_name or 'Uncategorised' }}
+                            <div class="module-muted">
+                                {{ service.shop_name or 'No shop assigned' }}
+                            </div>
+                        </td>
+
+                        <td>₹{{ "%.2f"|format(service.price or 0) }}</td>
+                        <td>{{ service.estimated_minutes or 30 }} min</td>
+
+                        <td>
+                            {{ 'Available' if service.is_available else 'Unavailable' }}
+                        </td>
+
+                        <td>
+                            <div class="module-actions">
+                                <form method="POST"
+                                      action="{{ url_for('toggle_service', service_id=service.id) }}">
+                                    <button class="module-btn secondary"
+                                            type="submit">
+                                        Toggle
+                                    </button>
+                                </form>
+
+                                <form method="POST"
+                                      action="{{ url_for('delete_service', service_id=service.id) }}"
+                                      onsubmit="return confirm('Delete this service?')">
+                                    <button class="module-btn danger"
+                                            type="submit">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">No services added yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <h2>Student Service Requests</h2>
+        <div class="module-table-wrap">
+            <table class="module-table">
+                <thead><tr><th>Student</th><th>Service</th><th>Request details</th><th>Preferred time</th><th>Current status</th><th>Update / reply</th></tr></thead>
+                <tbody>
+                {% for booking in service_bookings %}
+                    <tr>
+                        <td>{{ booking.student_name }}<div class="module-muted">{{ booking.student_phone or '' }}</div></td>
+                        <td>{{ booking.service_name }}</td>
+                        <td>{{ booking.details }}</td>
+                        <td>{{ booking.preferred_at or 'Flexible' }}</td>
+                        <td>{{ booking.status }}{% if booking.admin_notes %}<div class="module-muted">{{ booking.admin_notes }}</div>{% endif %}</td>
+                        <td><form method="post" action="{{ url_for('update_service_booking', booking_id=booking.id) }}"><select name="status"><option {{ 'selected' if booking.status == 'Order Placed' }}>Order Placed</option><option {{ 'selected' if booking.status == 'Verified' }}>Verified</option><option {{ 'selected' if booking.status == 'Ready for Pickup' }}>Ready for Pickup</option><option {{ 'selected' if booking.status == 'Service Done' }}>Service Done</option><option {{ 'selected' if booking.status == 'Out for Delivery' }}>Out for Delivery</option><option {{ 'selected' if booking.status == 'Pending' }}>Pending</option><option {{ 'selected' if booking.status == 'Confirmed' }}>Confirmed</option><option {{ 'selected' if booking.status == 'In Progress' }}>In Progress</option><option {{ 'selected' if booking.status == 'Completed' }}>Completed</option><option {{ 'selected' if booking.status == 'Cancelled' }}>Cancelled</option></select><input name="admin_notes" value="{{ booking.admin_notes or '' }}" placeholder="Reply / notes" style="margin:7px 0;padding:8px;width:100%"><button class="module-btn" type="submit">Save</button></form></td>
+                    </tr>
+                {% else %}<tr><td colspan="6">No student service requests yet.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- ROOMS -->
+
+    {% elif module == 'rooms' %}
+
+    <div class="module-grid">
+        <div class="module-stat">
+            <span>Total Rooms</span>
+            <strong>{{ room_stats.total_rooms }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Total Beds</span>
+            <strong>{{ room_stats.total_beds }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Occupied Beds</span>
+            <strong>{{ room_stats.occupied_beds }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Available Beds</span>
+            <strong>{{ room_stats.total_beds - room_stats.occupied_beds }}</strong>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <h2>➕ Add Hostel Room</h2>
+
+        <form method="POST"
+              action="{{ url_for('admin_rooms') }}"
+              class="module-form">
+
+            <div>
+                <label>Room Number *</label>
+                <input name="room_number" required
+                       placeholder="e.g. A-101">
+            </div>
+
+            <div>
+                <label>Room Type</label>
+                <select name="room_type">
+                    <option>Standard</option>
+                    <option>Single</option>
+                    <option>Double Sharing</option>
+                    <option>Triple Sharing</option>
+                    <option>Dormitory</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Floor / Block</label>
+                <input name="floor" placeholder="e.g. First Floor">
+            </div>
+
+            <div>
+                <label>Capacity (Beds)</label>
+                <input type="number" name="capacity"
+                       min="1" value="2" required>
+            </div>
+
+            <div>
+                <label>Occupied Beds</label>
+                <input type="number" name="occupied"
+                       min="0" value="0" required>
+            </div>
+
+            <div style="align-self:end">
+                <button class="module-btn" type="submit">
+                    Add Room
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="module-card">
+        <h2>Room Records</h2>
+
+        <div class="module-table-wrap">
+            <table class="module-table">
+                <thead>
+                    <tr>
+                        <th>Room</th>
+                        <th>Type</th>
+                        <th>Floor</th>
+                        <th>Capacity</th>
+                        <th>Occupancy</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for room in rooms %}
+                    <tr>
+                        <td><strong>{{ room.room_number }}</strong></td>
+                        <td>{{ room.room_type or 'Standard' }}</td>
+                        <td>{{ room.floor or '—' }}</td>
+                        <td>{{ room.capacity }}</td>
+                        <td>{{ room.occupied }}</td>
+                        <td>{{ room.status }}</td>
+
+                        <td>
+                            <div class="module-actions">
+
+                                <form method="POST"
+                                      class="module-inline"
+                                      action="{{ url_for('update_room', room_id=room.id) }}">
+
+                                    <input type="number"
+                                           name="capacity"
+                                           min="1"
+                                           value="{{ room.capacity }}"
+                                           required
+                                           style="width:70px;padding:7px">
+
+                                    <input type="number"
+                                           name="occupied"
+                                           min="0"
+                                           max="{{ room.capacity }}"
+                                           value="{{ room.occupied }}"
+                                           required
+                                           style="width:70px;padding:7px">
+
+                                    <button class="module-btn success"
+                                            type="submit">
+                                        Save
+                                    </button>
+                                </form>
+
+                                <form method="POST"
+                                      action="{{ url_for('delete_room', room_id=room.id) }}"
+                                      onsubmit="return confirm('Delete this room?')">
+                                    <button class="module-btn danger"
+                                            type="submit">
+                                        Delete
+                                    </button>
+                                </form>
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">No rooms added yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- MESS -->
+
+    {% elif module == 'mess' %}
+
+<section class="mess-weekly-section">
+    <div class="mess-heading">
+        <div>
+            <h2>🍽️ Weekly Mess Routine</h2>
+            <p>Monday to Sunday ka menu manage aur update karein.</p>
+        </div>
+        <span class="weekly-badge">7 Days · 3 Meals</span>
+    </div>
+
+
+<form method="POST" class="weekly-menu-form">
+    <div class="weekly-menu-table-wrap">
+        <table class="weekly-menu-table">
+            <thead>
+                <tr>
+                    <th>Day / Date</th>
+                    {% for meal in meals %}
+                    <th>{{ meal }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for day in week_dates %}
+                {% set day_key = day.isoformat() %}
+                <tr>
+                    <td class="day-cell">
+                        <strong>{{ day.strftime('%A') }}</strong>
+                        <small>{{ day.strftime('%d %b %Y') }}</small>
+                    </td>
+
+                    {% for meal in meals %}
+                    <td>
+                        <textarea
+                            name="{{ day_key }}_{{ meal }}"
+                            rows="3"
+                            maxlength="1000"
+                            aria-label="{{ day.strftime('%A') }} {{ meal }} menu"
+                            placeholder="Enter {{ meal }} menu..."
+                        >{{ weekly_menu[day_key][meal] }}</textarea>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="weekly-menu-actions">
+        <p>✏️ Menu edit karein, phir Save Changes dabayein.</p>
+        <button type="submit" class="save-menu-btn">
+            💾 Save Weekly Routine
+        </button>
+    </div>
+</form>
+
+</section>
+
+<style>
+.mess-weekly-section {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.mess-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.mess-heading h2 {
+    margin: 0 0 8px;
+    font-size: 25px;
+}
+
+.mess-heading p,
+.weekly-menu-actions p {
+    opacity: .75;
+    margin: 0;
+}
+
+.weekly-badge {
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(70, 130, 180, .12);
+    font-weight: 600;
+}
+
+.weekly-menu-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(128, 128, 128, .25);
+}
+
+.weekly-menu-table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+}
+
+.weekly-menu-table th,
+.weekly-menu-table td {
+    padding: 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(128, 128, 128, .2);
+    vertical-align: top;
+}
+
+.weekly-menu-table th {
+    background: rgba(100, 130, 180, .13);
+    font-weight: 700;
+}
+
+.weekly-menu-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.day-cell {
+    min-width: 120px;
+}
+
+.day-cell strong,
+.day-cell small {
+    display: block;
+}
+
+.day-cell small {
+    margin-top: 5px;
+    opacity: .7;
+}
+
+.weekly-menu-table textarea {
+    display: block;
+    width: 100%;
+    min-width: 155px;
+    box-sizing: border-box;
+    padding: 11px;
+    border: 1px solid rgba(128, 128, 128, .35);
+    border-radius: 9px;
+    background: var(--card-bg, #fff);
+    color: var(--text-color, #222);
+    font: inherit;
+    resize: vertical;
+}
+
+.weekly-menu-table textarea:focus {
+    outline: 2px solid #4f8cff;
+    outline-offset: 1px;
+}
+
+.weekly-menu-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.save-menu-btn {
+    padding: 13px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #246bfd;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .2s ease, opacity .2s ease;
+}
+
+.save-menu-btn:hover {
+    transform: translateY(-2px);
+    opacity: .9;
+}
+
+@media (max-width: 600px) {
+    .mess-heading h2 {
+        font-size: 21px;
+    }
+
+    .weekly-menu-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .save-menu-btn {
+        width: 100%;
+    }
+}
+</style>
+
+
+    <!-- COMPLAINTS -->
+
+    {% elif module == 'complaints' %}
+
+    <div class="module-card">
+        <form method="GET"
+              action="{{ url_for('admin_complaints') }}"
+              class="module-form">
+
+            <div>
+                <label>Search</label>
+                <input type="search"
+                       name="search"
+                       value="{{ search }}"
+                       placeholder="Student or complaint">
+            </div>
+
+            <div>
+                <label>Filter Status</label>
+                <select name="status">
+                    <option value="All"
+                        {% if selected_status == 'All' %}selected{% endif %}>
+                        All Complaints
+                    </option>
+
+                    {% for status in statuses %}
+                    <option value="{{ status }}"
+                        {% if selected_status == status %}selected{% endif %}>
+                        {{ status }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="align-self:end">
+                <button class="module-btn" type="submit">
+                    Apply Filters
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="module-card">
+        <h2>Student Complaints</h2>
+
+        <div class="module-table-wrap">
+            <table class="module-table">
+                <thead>
+                    <tr>
+                        <th>Complaint</th>
+                        <th>Student</th>
+                        <th>Date</th>
+                        <th>Priority</th>
+                        <th>Update</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for complaint in complaints %}
+                    <tr>
+                        <td>
+                            <strong>#{{ complaint.id }} — {{ complaint.subject }}</strong>
+                            <p>{{ complaint.description }}</p>
+                            <span class="module-muted">
+                                Status: {{ complaint.status }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {{ complaint.student_name }}
+                            <div class="module-muted">
+                                {{ complaint.student_email }}
+                            </div>
+                        </td>
+
+                        <td>{{ complaint.created_at }}</td>
+
+                        <td>{{ complaint.priority or 'Medium' }}</td>
+
+                        <td>
+                            <form method="POST"
+                                  action="{{ url_for('update_complaint', complaint_id=complaint.id) }}">
+
+                                <label>Status</label>
+                                <select name="status" required>
+                                    {% for status in statuses %}
+                                    <option value="{{ status }}"
+                                        {% if complaint.status == status %}selected{% endif %}>
+                                        {{ status }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+
+                                <br><br>
+
+                                <label>Priority</label>
+                                <select name="priority" required>
+                                    {% for priority in priorities %}
+                                    <option value="{{ priority }}"
+                                        {% if complaint.priority == priority %}selected{% endif %}>
+                                        {{ priority }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+
+                                <br><br>
+
+                                <button class="module-btn" type="submit">
+                                    Save Update
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">No complaints found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- REPORTS -->
+
+    {% elif module == 'reports' %}
+
+    <div class="module-grid">
+
+        <div class="module-stat">
+            <span>Registered Students</span>
+            <strong>{{ stats.students }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Shops</span>
+            <strong>{{ stats.shops }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Products</span>
+            <strong>{{ stats.products }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Services</span>
+            <strong>{{ stats.services }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Total Orders</span>
+            <strong>{{ stats.orders }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Total Complaints</span>
+            <strong>{{ stats.complaints }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Pending Complaints</span>
+            <strong>{{ stats.pending_complaints }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Hostel Rooms</span>
+            <strong>{{ stats.rooms }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Total Beds</span>
+            <strong>{{ stats.total_beds }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Occupied Beds</span>
+            <strong>{{ stats.occupied_beds }}</strong>
+        </div>
+
+        <div class="module-stat">
+            <span>Delivered Order Revenue</span>
+            <strong>₹{{ "%.2f"|format(stats.revenue) }}</strong>
+        </div>
+
+    </div>
+
+    <div class="module-card">
+        <h2>Download Report</h2>
+        <p>Export the current HostelHub database statistics as CSV.</p>
+
+        <a class="module-btn"
+           href="{{ url_for('export_admin_report') }}">
+            ⬇ Download CSV Report
+        </a>
+    </div>
+
+
+    <!-- SETTINGS -->
+
+    {% elif module == 'settings' %}
+
+    <div class="module-card">
+        <h2>⚙️ Hostel Information</h2>
+
+        <form method="POST"
+              action="{{ url_for('admin_settings') }}"
+              class="module-form"
+              enctype="multipart/form-data">
+
+            <div>
+                <label>Hostel Name</label>
+                <input name="hostel_name"
+                       value="{{ settings.get('hostel_name', '') }}"
+                       placeholder="HostelHub">
+            </div>
+
+            <div>
+                <label>Hostel Address</label>
+                <textarea name="hostel_address"
+                          placeholder="Enter hostel address">{{ settings.get('hostel_address', '') }}</textarea>
+            </div>
+
+            <div>
+                <label>Contact Email</label>
+                <input type="email"
+                       name="contact_email"
+                       value="{{ settings.get('contact_email', '') }}"
+                       placeholder="admin@example.com">
+            </div>
+
+            <div>
+                <label>Contact Phone</label>
+                <input type="tel"
+                       name="contact_phone"
+                       value="{{ settings.get('contact_phone', '') }}"
+                       placeholder="Contact number">
+            </div>
+
+            <div>
+                <label>UPI ID for student payments</label>
+                <input name="upi_id" value="{{ settings.get('upi_id', '') }}"
+                       placeholder="hostelhub@bank" autocomplete="off">
+                <small class="module-muted">Students can open their UPI app with order amount prefilled.</small>
+            </div>
+
+            <div>
+                <label>Upload UPI QR code (PNG, JPG or WebP; max 5 MB)</label>
+                <input type="file" name="payment_qr" accept="image/png,image/jpeg,image/webp">
+                {% if settings.get('payment_qr') %}
+                <div style="margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    <img src="{{ url_for('uploaded_file', folder='payments', filename=settings.get('payment_qr')) }}"
+                         alt="Current payment QR code" style="width:120px;height:120px;object-fit:contain;border:1px solid #ddd;border-radius:10px;padding:5px">
+                    <label style="display:flex;align-items:center;gap:7px;font-weight:500"><input type="checkbox" name="remove_payment_qr" value="1"> Remove current QR code</label>
+                </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label>Mess Notice</label>
+                <textarea name="mess_notice"
+                          placeholder="Enter a notice for students">{{ settings.get('mess_notice', '') }}</textarea>
+            </div>
+
+            <div style="align-self:end">
+                <button class="module-btn" type="submit">
+                    Save Settings
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

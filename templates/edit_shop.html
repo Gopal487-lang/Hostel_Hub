@@ -1,0 +1,369 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    /* ===== Edit Shop Page ===== */
+    .edit-shop-page {
+        min-height: 80vh;
+        padding: 45px 15px;
+        background: linear-gradient(135deg, #f0f4ff, #f8faff, #eef2ff);
+    }
+
+    .edit-shop-card {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 12px 40px rgba(31, 41, 55, 0.10);
+        animation: slideUp 0.55s ease-out;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .edit-shop-card:hover {
+        box-shadow: 0 18px 48px rgba(31, 41, 55, 0.15);
+    }
+
+    .edit-shop-header {
+        padding: 25px 30px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        border: none;
+    }
+
+    .edit-shop-header h4 {
+        margin: 0;
+        font-size: 23px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .edit-shop-header p {
+        margin: 7px 0 0;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .edit-shop-body {
+        padding: 32px;
+    }
+
+    .edit-shop-body .form-label {
+        color: #273449;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 9px;
+    }
+
+    .edit-shop-body .form-control,
+    .edit-shop-body .form-select {
+        min-height: 47px;
+        padding: 11px 14px;
+        border: 1px solid #dce3ee;
+        border-radius: 10px;
+        background-color: #fbfcff;
+        color: #263247;
+        font-size: 14px;
+        transition: border-color 0.25s ease,
+                    box-shadow 0.25s ease,
+                    background-color 0.25s ease;
+    }
+
+    .edit-shop-body textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .edit-shop-body .form-control:focus,
+    .edit-shop-body .form-select:focus {
+        border-color: #4f46e5;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+        outline: none;
+    }
+
+    .edit-shop-body .form-control::placeholder {
+        color: #9aa5b5;
+    }
+
+    .edit-shop-body .mb-3,
+    .edit-shop-body .mb-4 {
+        margin-bottom: 23px !important;
+    }
+
+    /* Save button */
+    .btn-save-shop {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border: none;
+        border-radius: 10px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        box-shadow: 0 5px 14px rgba(79, 70, 229, 0.22);
+        transition: all 0.25s ease;
+    }
+
+    .btn-save-shop:hover {
+        color: #ffffff;
+        background: linear-gradient(135deg, #1d4ed8, #4338ca);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.30);
+    }
+
+    .btn-save-shop:active {
+        transform: scale(0.97);
+    }
+
+    /* Cancel button */
+    .btn-cancel-shop {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border: 1px solid #d5dce7;
+        border-radius: 10px;
+        color: #475569;
+        background: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.25s ease;
+    }
+
+    .btn-cancel-shop:hover {
+        color: #1e293b;
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        transform: translateY(-2px);
+    }
+
+    .edit-shop-footer {
+        padding-top: 23px;
+        border-top: 1px solid #edf0f5;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .required-star {
+        color: #ef4444;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(22px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 576px) {
+        .edit-shop-page {
+            padding: 25px 10px;
+        }
+
+        .edit-shop-header {
+            padding: 22px 20px;
+        }
+
+        .edit-shop-header h4 {
+            font-size: 20px;
+        }
+
+        .edit-shop-body {
+            padding: 22px 18px;
+        }
+
+        .edit-shop-footer {
+            flex-direction: column;
+        }
+
+        .btn-save-shop,
+        .btn-cancel-shop {
+            width: 100%;
+        }
+    }
+
+    /* Respect reduced-motion preference */
+    @media (prefers-reduced-motion: reduce) {
+        .edit-shop-card {
+            animation: none;
+        }
+
+        .edit-shop-body .form-control,
+        .edit-shop-body .form-select,
+        .btn-save-shop,
+        .btn-cancel-shop {
+            transition: none;
+        }
+    }
+</style>
+
+<div class="edit-shop-page">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+
+                <div class="card edit-shop-card">
+
+                    <!-- Header -->
+                    <div class="card-header edit-shop-header">
+                        <h4>✏️ Edit Shop</h4>
+                        <p>Update your shop details and category.</p>
+                    </div>
+
+                    <!-- Form -->
+                    <div class="card-body edit-shop-body">
+
+                        <form method="POST">
+
+                            <!-- Shop Name -->
+                            <div class="mb-3">
+                                <label for="shop_name" class="form-label">
+                                    Shop Name <span class="required-star">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="shop_name"
+                                    name="shop_name"
+                                    class="form-control"
+                                    value="{{ shop['name'] }}"
+                                    placeholder="Enter shop name"
+                                    maxlength="150"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Category -->
+                            <div class="mb-3">
+                                <label for="category_id" class="form-label">
+                                    Shop Category <span class="required-star">*</span>
+                                </label>
+
+                                <select
+                                    id="category_id"
+                                    name="category_id"
+                                    class="form-select"
+                                    required
+                                >
+                                    <option value="">Select a category</option>
+
+                                    {% for category in categories %}
+                                        <option
+                                            value="{{ category['id'] }}"
+                                            {% if shop['category_id']|string == category['id']|string %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            {{ category['icon'] or '🏪' }}
+                                            {{ category['name'] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="provider_id" class="form-label">Shopkeeper Account</label>
+                                <select id="provider_id" name="provider_id" class="form-select">
+                                    <option value="">No account assigned</option>
+                                    {% for provider in providers %}
+                                    <option value="{{ provider.id }}" {% if shop['provider_id']|string == provider.id|string %}selected{% endif %}>{{ provider.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small>Assigned shopkeeper can add products for admin approval.</small>
+                            </div>
+
+                            <!-- Address -->
+                            <div class="mb-3">
+                                <label for="address" class="form-label">
+                                    Shop Address
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="address"
+                                    name="address"
+                                    class="form-control"
+                                    value="{{ shop['address'] or '' }}"
+                                    placeholder="Enter complete shop address"
+                                    maxlength="250"
+                                >
+                            </div>
+
+                            <!-- Opening Hours -->
+                            <div class="mb-3">
+                                <label for="opening_hours" class="form-label">
+                                    Opening Hours
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="opening_hours"
+                                    name="opening_hours"
+                                    class="form-control"
+                                    value="{{ shop['opening_hours'] or '' }}"
+                                    placeholder="e.g. 9 AM - 9 PM"
+                                    maxlength="100"
+                                >
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-4">
+                                <label for="description" class="form-label">
+                                    Shop Description
+                                </label>
+
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    class="form-control"
+                                    rows="4"
+                                    maxlength="1000"
+                                    placeholder="Describe your shop and the services you offer..."
+                                >{{ shop['description'] or '' }}</textarea>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="edit-shop-footer">
+
+                                <button
+                                    type="submit"
+                                    class="btn-save-shop"
+                                >
+                                    💾 Save Changes
+                                </button>
+
+                                <a
+                                    href="{{ url_for('admin_shops') }}"
+                                    class="btn-cancel-shop"
+                                >
+                                    ✕ Cancel
+                                </a>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

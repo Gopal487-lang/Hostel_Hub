@@ -1,0 +1,6 @@
+{% extends "provider_shell.html" %}
+{% block provider_content %}
+<section class="sk-panel"><div class="sk-panel-head"><div><span class="sk-eyebrow">STORE INVENTORY</span><h2>My Products</h2></div>{% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">＋ Add Product</a>{% endif %}</div>
+{% if products %}<div class="sk-table-wrap"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Approval status</th></tr></thead><tbody>{% for product in products %}<tr><td><strong>{{ product.name }}</strong><small>{{ product.category_name or 'Uncategorized' }}</small></td><td>₹{{ '%.2f'|format(product.price or 0) }}</td><td>{{ product.stock_quantity }}</td><td>{% if product.is_published %}<span class="sk-badge published">Published</span>{% else %}<span class="sk-badge pending">Pending admin approval</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="sk-empty"><span>▣</span><h3>No products added yet</h3><p>Submit a product for admin approval. It will be visible to students after it is published.</p>{% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">Add your first product</a>{% endif %}</div>{% endif %}
+</section>
+{% endblock %}

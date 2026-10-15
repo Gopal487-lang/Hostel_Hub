@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}Login | HostelHub{% endblock %}
+
+{% block extra_head %}
+<style>
+.auth-section {
+    min-height: 82vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 55px 20px;
+    background:
+        radial-gradient(circle at 10% 10%, #efedff 0, transparent 35%),
+        radial-gradient(circle at 90% 90%, #f4eaff 0, transparent 35%),
+        #faf9ff;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 1000px;
+    min-height: 570px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: white;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(70, 54, 150, .13);
+}
+
+.auth-visual {
+    padding: 55px 45px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: white;
+    background: linear-gradient(145deg, #6254e8, #8b5cf6 65%, #a66bfa);
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-visual::before,
+.auth-visual::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.2);
+    width: 260px;
+    height: 260px;
+}
+
+.auth-visual::before {
+    top: -110px;
+    right: -90px;
+}
+
+.auth-visual::after {
+    bottom: -150px;
+    left: -90px;
+    width: 330px;
+    height: 330px;
+}
+
+.auth-brand {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 45px;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-brand span {
+    color: #e7dcff;
+}
+
+.auth-illustration {
+    font-size: 68px;
+    margin-bottom: 25px;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-visual h2 {
+    font-size: clamp(28px, 3vw, 38px);
+    line-height: 1.2;
+    margin: 0 0 18px;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-visual p {
+    color: #eeeaff;
+    line-height: 1.8;
+    font-size: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-benefit {
+    margin-top: 25px;
+    display: grid;
+    gap: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-benefit div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.auth-benefit i {
+    color: #d8ffdf;
+}
+
+.auth-form-side {
+    padding: 55px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.auth-eyebrow {
+    color: #6254e8;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.auth-form-side h1 {
+    color: #20213b;
+    font-size: 34px;
+    margin: 0 0 10px;
+}
+
+.auth-subtitle {
+    color: #85869b;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 30px;
+}
+
+.auth-field {
+    margin-bottom: 20px;
+}
+
+.auth-field label {
+    display: block;
+    color: #34344e;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 9px;
+}
+
+.auth-input-wrap {
+    position: relative;
+}
+
+.auth-input-wrap > i:first-child {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9292aa;
+}
+
+.auth-input-wrap input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 49px;
+    border: 1px solid #e7e6f1;
+    border-radius: 12px;
+    outline: none;
+    padding: 0 45px;
+    font: inherit;
+    font-size: 14px;
+    color: #20213b;
+    background: #fcfbff;
+    transition: .2s;
+}
+
+.auth-input-wrap input:focus {
+    border-color: #7668ee;
+    box-shadow: 0 0 0 4px rgba(98,84,232,.10);
+    background: white;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #85869b;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.auth-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 25px;
+    font-size: 12px;
+}
+
+.auth-remember {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #686980;
+}
+
+.auth-link {
+    color: #6254e8;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+.auth-submit {
+    width: 100%;
+    min-height: 50px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6254e8, #8b5cf6);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(98,84,232,.22);
+    transition: transform .2s, box-shadow .2s;
+}
+
+.auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(98,84,232,.30);
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 13px;
+    color: #77788e;
+}
+
+.auth-message {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    background: #fff0f0;
+    color: #b42318;
+}
+
+@media (max-width: 760px) {
+    .auth-section {
+        padding: 25px 14px;
+    }
+
+    .auth-card {
+        max-width: 480px;
+        grid-template-columns: 1fr;
+    }
+
+    .auth-visual {
+        padding: 30px;
+        min-height: 230px;
+    }
+
+    .auth-brand {
+        margin-bottom: 22px;
+    }
+
+    .auth-illustration {
+        font-size: 42px;
+        margin-bottom: 12px;
+    }
+
+    .auth-visual h2 {
+        font-size: 27px;
+    }
+
+    .auth-benefit {
+        display: none;
+    }
+
+    .auth-form-side {
+        padding: 35px 25px;
+    }
+
+    .auth-form-side h1 {
+        font-size: 29px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-card">
+
+        <div class="auth-visual">
+            <div class="auth-brand">
+                <i class="fa-solid fa-house"></i>
+                Hostel<span>Hub</span>
+            </div>
+
+            <div class="auth-illustration">
+                <i class="fa-solid fa-building-user"></i>
+            </div>
+
+            <h2>Your hostel life,<br>made easier.</h2>
+
+            <p>
+                Everything you need around your campus, all in one place.
+                Connect with services, explore nearby shops and make
+                hostel life simpler.
+            </p>
+
+            <div class="auth-benefit">
+                <div><i class="fa-solid fa-circle-check"></i> Discover nearby services</div>
+                <div><i class="fa-solid fa-circle-check"></i> Manage your hostel needs</div>
+                <div><i class="fa-solid fa-circle-check"></i> One platform, endless convenience</div>
+            </div>
+        </div>
+
+        <div class="auth-form-side">
+            <div class="auth-eyebrow">WELCOME TO HOSTELHUB</div>
+
+<h1>Welcome to HostelHub!</h1>
+
+<p class="auth-subtitle">
+    Your hostel, your community, your comfort.
+</p>
+
+<div class="login-role-tabs" role="tablist" aria-label="Choose login type">
+    <button type="button" class="login-role-tab active"
+            data-role="user" role="tab" aria-selected="true">
+        <i class="fa-solid fa-user"></i> User
+    </button>
+
+<button type="button" class="login-role-tab"
+        data-role="warden" role="tab" aria-selected="false">
+    <i class="fa-solid fa-shield-halved"></i> Warden
+</button>
+
+<button type="button" class="login-role-tab"
+        data-role="admin" role="tab" aria-selected="false">
+    <i class="fa-solid fa-user-gear"></i> Admin
+</button>
+
+<button type="button" class="login-role-tab"
+        data-role="shopkeeper" role="tab" aria-selected="false">
+    <i class="fa-solid fa-store"></i> Shopkeeper
+</button>
+
+</div>
+
+<h2 id="loginFormTitle" class="login-form-title">User Login</h2>
+
+<h2 id="loginFormTitle"></h2>
+            <p class="auth-subtitle">
+                Enter your details to access your account.
+            </p>
+
+            {% if error %}
+                <div class="auth-message">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <input type="hidden" name="login_role" id="loginRole" value="user">
+                <div class="auth-field">
+                    <label for="email">Email address</label>
+                    <div class="auth-input-wrap">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="you@example.com"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="auth-field">
+                    <label for="password">Password</label>
+                    <div class="auth-input-wrap">
+                        <i class="fa-solid fa-lock"></i>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button class="toggle-password" type="button"
+                                aria-label="Show password"
+                                onclick="togglePassword('password', this)">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="auth-options">
+                    <label class="auth-remember">
+                        <input type="checkbox" name="remember">
+                        Remember me
+                    </label>
+                    <a class="auth-link" href="#" onclick="alert('Password recovery will be added soon.'); return false;">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="auth-submit">
+                    Login to your account
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+            
+<div class="auth-footer" id="registerFooter">
+    New user?
+    <a href="{{ url_for('register') }}">Register here</a>
+</div>
+
+
+            <div class="auth-footer">
+                Don't have an account?
+                <a class="auth-link" href="{{ url_for('register') }}">Create account</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script>
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector("i");
+
+    if (input.type === "password") {
+        input.type = "text";
+        button.setAttribute("aria-label", "Hide password");
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+    } else {
+        input.type = "password";
+        button.setAttribute("aria-label", "Show password");
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const tabs = document.querySelectorAll(".login-role-tab");
+    const roleInput = document.getElementById("loginRole");
+    const title = document.getElementById("loginFormTitle");
+    const registerFooter = document.getElementById("registerFooter");
+
+    if (!tabs.length || !roleInput || !title) {
+        console.error("Login role tabs ke required HTML elements nahi mile.");
+        return;
+    }
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+            const role = this.dataset.role;
+
+            tabs.forEach(function (button) {
+                const active = button === tab;
+                button.classList.toggle("active", active);
+                button.setAttribute("aria-selected", String(active));
+            });
+
+            roleInput.value = role;
+
+            const titles = {
+                user: "User Login",
+                warden: "Warden Login",
+                admin: "Admin Login",
+                shopkeeper: "Shopkeeper Login"
+            };
+
+            title.textContent = titles[role] || "Login";
+
+            if (registerFooter) {
+                registerFooter.style.display =
+                    role === "user" ? "block" : "none";
+            }
+        });
+    });
+});
+
+</script>
+{% endblock %}

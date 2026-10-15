@@ -1,0 +1,337 @@
+
+{% extends "base.html" %}
+
+{% block title %}My Cart | HostelHub{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Flash Messages */
+.cart-alert {
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid transparent;
+    animation: cartAlertIn 0.35s ease;
+}
+
+.cart-alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.cart-alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fcd34d;
+}
+
+.cart-alert-error,
+.cart-alert-danger {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5;
+}
+
+@keyframes cartAlertIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.cart-page {
+    max-width: 1150px;
+    margin: 35px auto;
+    padding: 25px;
+    color: #1e293b;
+}
+
+.cart-header {
+    margin-bottom: 30px;
+}
+
+.cart-header h1 {
+    font-size: 34px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.cart-header p {
+    color: #64748b;
+}
+
+.cart-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+}
+
+.cart-item {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding: 22px;
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(15,23,42,.05);
+    transition: .25s ease;
+}
+
+.cart-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(79,70,229,.10);
+}
+
+.cart-item img {
+    width: 115px;
+    height: 115px;
+    object-fit: cover;
+    border-radius: 14px;
+    background: #f1f5f9;
+}
+
+.cart-item-info {
+    flex: 1;
+}
+
+.cart-item-info h3 {
+    font-size: 19px;
+    margin: 0 0 8px;
+}
+
+.cart-item-info p {
+    margin: 6px 0;
+    color: #64748b;
+}
+
+.cart-price {
+    color: #059669 !important;
+    font-weight: 800;
+    font-size: 17px;
+}
+
+.cart-summary {
+    position: sticky;
+    top: 25px;
+    padding: 25px;
+    border: 1px solid #e0e7ff;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #eef2ff, #f0fdfa);
+}
+
+.cart-summary h2 {
+    margin: 0 0 20px;
+    font-size: 23px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 15px 0;
+    color: #64748b;
+}
+
+.summary-total {
+    padding-top: 18px;
+    border-top: 1px solid #cbd5e1;
+    color: #172554;
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.cart-button {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: #4f46e5;
+    color: white;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: .25s ease;
+}
+
+.cart-button:hover {
+    background: #3730a3;
+    transform: translateY(-2px);
+}
+
+.empty-cart {
+    padding: 60px 20px;
+    border-radius: 20px;
+    text-align: center;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+}
+
+.empty-cart .empty-icon {
+    font-size: 65px;
+}
+
+.empty-cart p {
+    color: #64748b;
+}
+
+@media(max-width: 800px) {
+    .cart-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cart-summary {
+        position: static;
+    }
+}
+
+@media(max-width: 480px) {
+    .cart-page {
+        padding: 15px;
+    }
+
+    .cart-header h1 {
+        font-size: 27px;
+    }
+
+    .cart-item {
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .cart-item img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .cart-item-info h3 {
+        font-size: 16px;
+    }
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="cart-page">
+
+    <!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="cart-alert cart-alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+    <!-- CART HEADER -->
+    <div class="cart-header">
+        <h1>🛒 My Cart</h1>
+        <p>Review your selected products before placing an order.</p>
+    </div>
+
+    {% if cart_products %}
+
+    <div class="cart-layout">
+
+        <div class="cart-items">
+
+            {% for item in cart_products %}
+            <div class="cart-item">
+
+                {% if item['image_url'] %}
+                <img src="{{ item['image_url'] }}" alt="{{ item['name'] }}">
+                {% else %}
+                <div class="empty-icon">📦</div>
+                {% endif %}
+
+                <div class="cart-item-info">
+                    <h3>{{ item['name'] }}</h3>
+
+                    <p>Shop: {{ item['shop_name'] }}</p>
+
+                    <p>
+                        Price: ₹{{ "%.2f"|format(item['price']) }}
+                    </p>
+
+                    <p>Quantity: {{ item['quantity'] }}</p>
+
+                    <p class="cart-price">
+                        Subtotal: ₹{{ "%.2f"|format(item['item_total']) }}
+                    </p>
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+        
+
+        <aside class="cart-summary">
+            <h2>Order Summary</h2>
+
+            <div class="summary-row">
+                <span>Different products</span>
+                <strong>{{ cart_products|length }}</strong>
+            </div>
+
+            <div class="summary-row">
+                <span>Total quantity</span>
+                <strong>
+                    {{ cart_products|sum(attribute='quantity') }}
+                </strong>
+            </div>
+
+            <div class="summary-row summary-total">
+                <span>Total</span>
+                <span>₹{{ "%.2f"|format(cart_total) }}</span>
+            </div>
+
+            <p style="font-size:12px;color:#64748b;">
+                Delivery charges, if applicable, will be calculated separately.
+            </p>
+
+            
+<a href="{{ url_for('checkout') }}" class="cart-button">
+    🛍️ Proceed to Checkout
+</a>
+
+<a href="{{ url_for('marketplace') }}" class="cart-button">
+    Continue Shopping
+</a>
+
+        </aside>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-cart">
+        <div class="empty-icon">🛒</div>
+        <h2>Your cart is empty</h2>
+        <p>Add products from Marketplace to see them here.</p>
+
+        <a href="{{ url_for('marketplace') }}" class="cart-button"
+           style="max-width:240px;margin:20px auto 0;">
+            Explore Products
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

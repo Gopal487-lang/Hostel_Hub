@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="checkout-container">
+    <h1>Complete Your Order</h1>
+    <p>Enter your delivery details to place your order.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="checkout-alert checkout-alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('place_cart_order') }}">
+        {% if buy_now_product_id %}<input type="hidden" name="buy_now_product_id" value="{{ buy_now_product_id }}">{% endif %}
+        <div class="checkout-field">
+            <label for="delivery_address">Delivery Address *</label>
+            <textarea
+                id="delivery_address"
+                name="delivery_address"
+                placeholder="Hostel name, room number, block, and full address"
+                rows="4"
+                required
+            ></textarea>
+        </div>
+
+        <div class="checkout-field">
+            <label for="phone">Mobile Number *</label>
+            <input
+                type="tel"
+                id="phone"
+                name="phone"
+                placeholder="Enter 10-digit mobile number"
+                pattern="[6-9][0-9]{9}"
+                maxlength="10"
+                required
+            >
+        </div>
+
+        <div class="checkout-field">
+            <label for="instructions">Delivery Instructions (Optional)</label>
+            <textarea
+                id="instructions"
+                name="instructions"
+                placeholder="Any special delivery instructions"
+                rows="2"
+            ></textarea>
+        </div>
+
+        <div class="checkout-summary">
+            <h3>Order Summary</h3>
+
+            {% for item in cart_products %}
+                <div class="checkout-item">
+                    <span>{{ item["name"] }} × {{ item["quantity"] }}</span>
+                    <span>₹{{ "%.2f"|format(item["price"] * item["quantity"]) }}</span>
+                </div>
+            {% endfor %}
+
+            <hr>
+
+            <div class="checkout-total">
+                <strong>Total Amount</strong>
+                <strong>₹{{ "%.2f"|format(cart_total) }}</strong>
+            </div>
+        </div>
+
+        <button type="submit" class="checkout-button">
+            Place Order
+        </button>
+
+        <a href="{{ url_for('marketplace') if buy_now_product_id else url_for('my_cart') }}" class="checkout-back">
+            ← {{ 'Back to Marketplace' if buy_now_product_id else 'Back to Cart' }}
+        </a>
+    </form>
+</div>
+
+<style>
+.checkout-container {
+    max-width: 700px;
+    margin: 35px auto;
+    padding: 28px;
+    border-radius: 18px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+.checkout-container h1 { margin-bottom: 8px; }
+.checkout-field { margin-top: 22px; }
+.checkout-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.checkout-field input,
+.checkout-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font: inherit;
+}
+.checkout-field input:focus,
+.checkout-field textarea:focus {
+    outline: 2px solid #6366f1;
+    border-color: #6366f1;
+}
+.checkout-summary {
+    margin-top: 28px;
+    padding: 18px;
+    border-radius: 12px;
+    background: var(--bg-secondary, #f8fafc);
+}
+.checkout-item,
+.checkout-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 12px 0;
+}
+.checkout-button {
+    width: 100%;
+    margin-top: 24px;
+    padding: 15px;
+    color: white;
+    background: #4f46e5;
+    border: 0;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.checkout-button:hover { background: #4338ca; }
+.checkout-back {
+    display: block;
+    margin-top: 16px;
+    text-align: center;
+}
+.checkout-alert {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+}
+.checkout-alert-danger,
+.checkout-alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.checkout-alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+@media (max-width: 600px) {
+    .checkout-container {
+        margin: 16px;
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}

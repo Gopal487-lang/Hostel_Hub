@@ -1,0 +1,880 @@
+{% extends "base.html" %}
+
+{% block title %}HostelHub — Everything Near You{% endblock %}
+
+{% block content %}
+
+<!-- HERO SECTION -->
+<section class="hero-section">
+
+    <div class="hero-glow hero-glow-one"></div>
+    <div class="hero-glow hero-glow-two"></div>
+
+    <div class="container hero-grid">
+
+        <div class="hero-content reveal">
+
+            <div class="hero-badge">
+                <span class="live-dot"></span>
+                YOUR HOSTEL LIFE, UPGRADED
+                <i class="fa-solid fa-sparkles"></i>
+            </div>
+
+            <h1>
+                Hostel life,
+                <span class="gradient-text">but make it</span>
+                <span class="hero-last-line">
+                    <span class="highlight-word">effortless.</span>
+                    <span class="hero-star">✳</span>
+                </span>
+            </h1>
+
+            <p class="hero-description">
+                From your favourite snacks to laundry, mobile repairs
+                and hostel essentials — discover everything you need
+                without the hassle.
+            </p>
+
+            <div class="hero-search">
+
+                <div class="search-location">
+                    <i class="fa-solid fa-location-dot"></i>
+
+                    <div>
+                        <small>DELIVERING NEAR</small>
+                        <strong>Your Hostel</strong>
+                    </div>
+
+                    <i class="fa-solid fa-chevron-down location-arrow"></i>
+                </div>
+
+                <div class="search-divider"></div>
+
+                <form class="search-form" id="heroSearchForm">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input type="search"
+                           id="heroSearch"
+                           placeholder="Search food, laundry, shops..."
+                           autocomplete="off">
+
+                    <button type="submit">Search</button>
+                </form>
+
+            </div>
+
+            <div class="hero-quick-links">
+                <span>Popular:</span>
+                <a href="#services" data-search="Laundry">Laundry</a>
+                <a href="#marketplace" data-search="Food">Food</a>
+                <a href="#services" data-search="Printing">Printing</a>
+                <a href="#services" data-search="Repair">Repairs</a>
+            </div>
+
+            <div class="hero-trust">
+
+                <div class="trust-avatars">
+                    <span>🎓</span>
+                    <span>🧑‍💻</span>
+                    <span>🧑‍🎓</span>
+                    <span>+</span>
+                </div>
+
+                <div>
+                    <strong>Your campus community</strong>
+                    <p>Everything closer to you.</p>
+                </div>
+
+                <div class="trust-divider"></div>
+
+                <div class="trust-rating">
+                    <i class="fa-solid fa-star"></i>
+                    <strong>Student-first</strong>
+                    <p>Built around your needs</p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="hero-visual reveal">
+
+            <div class="hero-image-frame">
+
+                <img
+                    src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1100&q=85"
+                    alt="Students collaborating in a modern student-friendly space"
+                    class="hero-main-image"
+                    fetchpriority="high">
+
+                <div class="hero-image-overlay"></div>
+
+                <div class="hero-floating-card floating-delivery">
+
+                    <div class="floating-icon green-icon">
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    </div>
+
+                    <div>
+                        <strong>Everyday essentials</strong>
+                        <p>All in one place</p>
+                    </div>
+
+                    <i class="fa-solid fa-circle-check floating-check"></i>
+
+                </div>
+
+                <div class="hero-floating-card floating-laundry">
+
+                    <div class="floating-icon purple-icon">
+                        <i class="fa-solid fa-shirt"></i>
+                    </div>
+
+                    <div>
+                        <strong>Laundry pickup</strong>
+                        <p>Schedule at your convenience</p>
+                    </div>
+
+                </div>
+
+                <div class="hero-image-sticker">
+                    <span>✨</span>
+                    <div>
+                        <strong>HostelHub</strong>
+                        <small>Your everyday companion</small>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="hero-decor hero-decor-one">✳</div>
+            <div class="hero-decor hero-decor-two">✦</div>
+
+        </div>
+
+    </div>
+
+    <div class="hero-bottom-strip">
+        <div class="container hero-bottom-inner">
+            <span><i class="fa-solid fa-bolt"></i> Everyday Convenience</span>
+            <span><i class="fa-solid fa-store"></i> Local Shop Discovery</span>
+            <span><i class="fa-solid fa-shirt"></i> Easy Service Booking</span>
+            <span><i class="fa-solid fa-house"></i> Hostel Management</span>
+        </div>
+    </div>
+
+</section>
+
+
+<!-- CATEGORY SECTION -->
+<section class="section categories-section" id="services">
+
+    <div class="container">
+
+        <div class="section-heading reveal">
+
+            <div>
+                <span class="eyebrow">
+                    <span class="eyebrow-line"></span>
+                    WHAT DO YOU NEED TODAY?
+                </span>
+
+                <h2>
+                    Your everyday needs,
+                    <span class="gradient-text">one hub.</span>
+                </h2>
+
+                <p>
+                    The little things that make hostel life better,
+                    all just a few clicks away.
+                </p>
+            </div>
+
+            <a href="#marketplace" class="text-link">
+                Explore everything
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+
+        </div>
+
+        <div class="category-grid">
+
+            {% for category in categories %}
+
+            <a href="#marketplace"
+               class="category-card reveal"
+               data-category="{{ category.name|lower }}"
+               style="--card-index: {{ loop.index0 }}">
+
+                <div class="category-icon category-icon-{{ loop.index }}">
+                    <span>{{ category.icon }}</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </div>
+
+                <h3>{{ category.name }}</h3>
+
+                <p>{{ category.description }}</p>
+
+                <div class="category-bottom">
+                    <span>Explore category</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+
+            </a>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- PROMOTIONAL BANNER -->
+<section class="promo-section">
+
+    <div class="container">
+
+        <div class="promo-banner reveal">
+
+            <div class="promo-content">
+
+                <span class="promo-label">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    YOUR TIME MATTERS
+                </span>
+
+                <h2>
+                    Less running around.
+                    <span>More living.</span>
+                </h2>
+
+                <p>
+                    Discover useful local services and get more time
+                    for your classes, friends and yourself.
+                </p>
+
+                <a href="#marketplace" class="btn btn-white">
+                    Explore HostelHub
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+            <div class="promo-art">
+
+                <div class="promo-circle promo-circle-one"></div>
+                <div class="promo-circle promo-circle-two"></div>
+
+                <div class="promo-product promo-product-one">
+                    <span>🥤</span>
+                </div>
+
+                <div class="promo-product promo-product-two">
+                    <span>🍔</span>
+                </div>
+
+                <div class="promo-product promo-product-three">
+                    <span>🧺</span>
+                </div>
+
+                <div class="promo-product promo-product-four">
+                    <span>📦</span>
+                </div>
+
+                <div class="promo-spark promo-spark-one">✦</div>
+                <div class="promo-spark promo-spark-two">✳</div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- MARKETPLACE SECTION -->
+<section class="section marketplace-section" id="marketplace">
+
+    <div class="container">
+
+        <div class="section-heading reveal">
+
+            <div>
+
+                <span class="eyebrow">
+                    <span class="eyebrow-line"></span>
+                    DISCOVER YOUR NEIGHBOURHOOD
+                </span>
+
+                <h2>
+                    Good finds,
+                    <span class="gradient-text">right nearby.</span>
+                </h2>
+
+                <p>
+                    Discover products, local businesses and services
+                    that fit your everyday student life.
+                </p>
+
+            </div>
+
+            <span class="marketplace-tag">
+                <i class="fa-solid fa-compass"></i>
+                Local discovery
+            </span>
+
+        </div>
+
+
+        <div class="marketplace-filters reveal">
+
+            <button class="filter-btn active" data-filter="all">
+                All
+            </button>
+
+            <button class="filter-btn" data-filter="food">
+                <span>🍔</span> Food
+            </button>
+
+            <button class="filter-btn" data-filter="daily">
+                <span>🛒</span> Daily Needs
+            </button>
+
+            <button class="filter-btn" data-filter="service">
+                <span>🧺</span> Services
+            </button>
+
+        </div>
+
+            <!-- MARKETPLACE LISTINGS -->
+
+{% if products or services %}
+
+<div class="marketplace-grid" id="marketplaceGrid">
+
+    <!-- PRODUCT CARDS -->
+
+    {% for product in products %}
+
+    <article
+        class="product-card marketplace-card reveal"
+        data-category="{{ (product.category_slug or product.category_name or '')|lower }}"
+        data-searchable="{{ product.name }} {{ product.description or '' }} {{ product.shop_name or '' }} {{ product.category_name or '' }}"
+    >
+
+        <div class="marketplace-card-image">
+
+            {% if product.image_url %}
+
+                <img
+                    src="{{ product.image_url }}"
+                    alt="{{ product.name }}"
+                    loading="lazy"
+                >
+
+            {% else %}
+
+                <div class="marketplace-placeholder-image">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+
+            {% endif %}
+
+            <span class="listing-badge">
+                Product
+            </span>
+
+        </div>
+
+        <div class="marketplace-card-content">
+
+            <p class="listing-shop">
+                <i class="fa-solid fa-store"></i>
+                {{ product.shop_name }}
+            </p>
+
+            <h3>{{ product.name }}</h3>
+
+            <p class="listing-description">
+                {{ product.description or 'Discover this item on HostelHub.' }}
+            </p>
+
+            <div class="listing-card-footer">
+
+                <span class="listing-price">
+                    ₹{{ "%.2f"|format(product.price or 0) }}
+                </span>
+
+                <button
+                    type="button"
+                    class="btn btn-primary listing-action"
+                    disabled
+                    title="Cart functionality will be added next"
+                >
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    Add to Cart
+                </button>
+
+            </div>
+
+        </div>
+
+    </article>
+
+    {% endfor %}
+
+
+    <!-- SERVICE CARDS -->
+
+    {% for service in services %}
+
+    <article
+        class="service-card marketplace-card reveal"
+        data-category="service"
+        data-searchable="{{ service.name }} {{ service.description or '' }} {{ service.shop_name or '' }} {{ service.category_name or '' }}"
+    >
+
+        <div class="marketplace-card-image service-card-image">
+
+            <div class="marketplace-placeholder-image">
+                <i class="fa-solid fa-handshake-angle"></i>
+            </div>
+
+            <span class="listing-badge service-badge">
+                Service
+            </span>
+
+        </div>
+
+        <div class="marketplace-card-content">
+
+            <p class="listing-shop">
+                <i class="fa-solid fa-store"></i>
+                {{ service.shop_name }}
+            </p>
+
+            <h3>{{ service.name }}</h3>
+
+            <p class="listing-description">
+                {{ service.description or 'Explore this service on HostelHub.' }}
+            </p>
+
+            {% if service.estimated_minutes %}
+
+            <p class="service-duration">
+                <i class="fa-regular fa-clock"></i>
+                Estimated time: {{ service.estimated_minutes }} minutes
+            </p>
+
+            {% endif %}
+
+            <div class="listing-card-footer">
+
+                <span class="listing-price">
+                    ₹{{ "%.2f"|format(service.price or 0) }}
+                </span>
+
+                <button
+                    type="button"
+                    class="btn btn-primary listing-action"
+                    disabled
+                    title="Service booking functionality will be added next"
+                >
+                    <i class="fa-solid fa-calendar-check"></i>
+                    Book Service
+                </button>
+
+            </div>
+
+        </div>
+
+    </article>
+
+    {% endfor %}
+
+</div>
+
+<!-- No search/filter results message -->
+
+<p id="marketplaceNoResults" hidden>
+    No matching products or services found.
+</p>
+
+{% else %}
+
+<!-- EMPTY MARKETPLACE -->
+
+<div class="empty-marketplace reveal" id="emptyMarketplace">
+
+    <div class="empty-marketplace-icon">
+        <i class="fa-solid fa-store"></i>
+    </div>
+
+    <h3>Your neighbourhood marketplace starts here.</h3>
+
+    <p>
+        Products and services will appear here as shops and
+        service providers are added to HostelHub.
+    </p>
+
+    <a href="{{ url_for('register') }}" class="btn btn-primary">
+        Join HostelHub
+        <i class="fa-solid fa-arrow-right"></i>
+    </a>
+
+</div>
+
+{% endif %}
+
+<div class="marketplace-note">
+
+    <i class="fa-solid fa-circle-info"></i>
+
+    <span>
+        Explore available products and services from local shops.
+        More listings will appear as providers join HostelHub.
+    </span>
+
+</div>
+
+        <div class="marketplace-note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>
+                Listings, availability and delivery estimates will be
+                displayed when verified providers add their offerings.
+            </span>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- HOSTEL MANAGEMENT -->
+<section class="section hostel-section" id="hostel">
+
+    <div class="container">
+
+        <div class="hostel-layout">
+
+            <div class="hostel-content reveal">
+
+                <span class="eyebrow">
+                    <span class="eyebrow-line"></span>
+                    MORE THAN A MARKETPLACE
+                </span>
+
+                <h2>
+                    Hostel life,
+                    <span class="gradient-text">under control.</span>
+                </h2>
+
+                <p>
+                    Room availability, mess menus, hostel notices
+                    and maintenance complaints — designed to make
+                    hostel management simpler.
+                </p>
+
+                <div class="hostel-feature-list">
+
+                    <div class="hostel-feature">
+                        <div class="hostel-feature-icon purple-soft">
+                            <i class="fa-solid fa-bed"></i>
+                        </div>
+
+                        <div>
+                            <h3>Room Management</h3>
+                            <p>Room availability and occupancy records.</p>
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right feature-arrow"></i>
+                    </div>
+
+                    <div class="hostel-feature">
+                        <div class="hostel-feature-icon orange-soft">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+
+                        <div>
+                            <h3>Mess & Daily Menu</h3>
+                            <p>Check meal schedules and mess updates.</p>
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right feature-arrow"></i>
+                    </div>
+
+                    <div class="hostel-feature">
+                        <div class="hostel-feature-icon green-soft">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                        </div>
+
+                        <div>
+                            <h3>Hostel Complaints</h3>
+                            <p>Submit maintenance issues and follow progress.</p>
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right feature-arrow"></i>
+                    </div>
+
+                    <div class="hostel-feature">
+                        <div class="hostel-feature-icon blue-soft">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </div>
+
+                        <div>
+                            <h3>Notices & Announcements</h3>
+                            <p>Keep important hostel information accessible.</p>
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right feature-arrow"></i>
+                    </div>
+
+                </div>
+
+                <a href="{{ url_for('login') }}" class="btn btn-primary hostel-cta">
+                    Access Your Dashboard
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+
+            <div class="hostel-visual reveal">
+
+                <div class="hostel-visual-glow"></div>
+
+                <div class="hostel-dashboard-card">
+
+                    <div class="mini-dashboard-header">
+                        <div>
+                            <span class="mini-label">YOUR SPACE</span>
+                            <h3>Hostel Overview</h3>
+                        </div>
+
+                        <span class="mini-dashboard-icon">
+                            <i class="fa-solid fa-house"></i>
+                        </span>
+                    </div>
+
+                    <div class="mini-dashboard-banner">
+                        <div>
+                            <span>WELCOME TO</span>
+                            <h3>Smarter hostel living.</h3>
+                            <p>Your campus, connected.</p>
+                        </div>
+
+                        <span class="mini-house-illustration">🏡</span>
+                    </div>
+
+                    <div class="mini-stat-grid">
+
+                        <div class="mini-stat">
+                            <span class="mini-stat-icon purple-soft">
+                                <i class="fa-solid fa-bed"></i>
+                            </span>
+
+                            <small>Rooms</small>
+                            <strong>Management</strong>
+                            <span class="mini-status">Availability records</span>
+                        </div>
+
+                        <div class="mini-stat">
+                            <span class="mini-stat-icon orange-soft">
+                                <i class="fa-solid fa-utensils"></i>
+                            </span>
+
+                            <small>Mess</small>
+                            <strong>Daily menu</strong>
+                            <span class="mini-status">Meal schedules</span>
+                        </div>
+
+                    </div>
+
+                    <div class="mini-notice">
+                        <span class="mini-notice-icon">
+                            <i class="fa-solid fa-bell"></i>
+                        </span>
+
+                        <div>
+                            <strong>Stay in the loop</strong>
+                            <p>Hostel notices in one place.</p>
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+
+                    <div class="mini-dashboard-footer">
+                        <span><i class="fa-solid fa-shield-halved"></i> Role-based access</span>
+                        <span><i class="fa-solid fa-heart"></i> Student-first</span>
+                    </div>
+
+                </div>
+
+                <div class="hostel-floating-note">
+                    <span>✨</span>
+                    <div>
+                        <strong>Everything connected</strong>
+                        <p>One platform for hostel life</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- HOW IT WORKS -->
+<section class="section how-section" id="how-it-works">
+
+    <div class="container">
+
+        <div class="section-heading centered-heading reveal">
+
+            <span class="eyebrow">
+                <span class="eyebrow-line"></span>
+                SIMPLE BY DESIGN
+                <span class="eyebrow-line"></span>
+            </span>
+
+            <h2>
+                Your needs,
+                <span class="gradient-text">three easy steps.</span>
+            </h2>
+
+            <p>
+                Less effort. Fewer hassles. A more convenient hostel life.
+            </p>
+
+        </div>
+
+
+        <div class="steps-grid">
+
+            <div class="step-card reveal">
+                <div class="step-number">01</div>
+
+                <div class="step-icon step-icon-purple">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+
+                <h3>Discover</h3>
+
+                <p>
+                    Find products, local shops, hostel facilities
+                    and useful services.
+                </p>
+            </div>
+
+            <div class="step-connector">
+                <i class="fa-solid fa-arrow-right"></i>
+            </div>
+
+            <div class="step-card reveal">
+                <div class="step-number">02</div>
+
+                <div class="step-icon step-icon-orange">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+
+                <h3>Order or Book</h3>
+
+                <p>
+                    Place an order or schedule a service
+                    at your preferred time.
+                </p>
+            </div>
+
+            <div class="step-connector">
+                <i class="fa-solid fa-arrow-right"></i>
+            </div>
+
+            <div class="step-card reveal">
+                <div class="step-number">03</div>
+
+                <div class="step-icon step-icon-green">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+
+                <h3>Enjoy More</h3>
+
+                <p>
+                    Follow order updates and spend more time
+                    on the things you love.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- FINAL CTA -->
+<section class="cta-section" id="help">
+
+    <div class="container">
+
+        <div class="cta-card reveal">
+
+            <div class="cta-decoration cta-decoration-one"></div>
+            <div class="cta-decoration cta-decoration-two"></div>
+
+            <div class="cta-content">
+
+                <span class="cta-label">
+                    <i class="fa-solid fa-sparkles"></i>
+                    YOUR CAMPUS. YOUR WORLD.
+                </span>
+
+                <h2>
+                    Make room for
+                    <span>more life.</span>
+                </h2>
+
+                <p>
+                    Discover a simpler way to manage everyday needs,
+                    hostel facilities and local services.
+                </p>
+
+                <div class="cta-actions">
+
+                    <a href="{{ url_for('register') }}"
+                       class="btn btn-white">
+                        Get Started
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+
+                    <a href="{{ url_for('login') }}"
+                       class="cta-login-link">
+                        Already have an account? <strong>Login</strong>
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="cta-illustration">
+                <div class="cta-illustration-circle">
+                    <span class="cta-emoji cta-emoji-one">🛍️</span>
+                    <span class="cta-emoji cta-emoji-two">🏡</span>
+                    <span class="cta-emoji cta-emoji-three">🧺</span>
+                    <span class="cta-emoji cta-emoji-four">🍔</span>
+                    <span class="cta-main-emoji">✨</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

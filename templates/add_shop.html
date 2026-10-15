@@ -1,0 +1,266 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add Shop | HostelHub</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 15px;
+            background: #f4f6fc;
+            color: #20243a;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .card {
+            padding: 30px;
+            background: white;
+            border: 1px solid #e8eaf3;
+            border-radius: 18px;
+            box-shadow: 0 12px 35px rgba(37, 40, 75, 0.06);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 26px;
+        }
+
+        .subtitle {
+            margin-bottom: 28px;
+            color: #858ba3;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .field {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #e2e5f0;
+            border-radius: 10px;
+            background: white;
+            color: #20243a;
+            font: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #6558f5;
+            box-shadow: 0 0 0 3px rgba(101, 88, 245, 0.10);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .hint {
+            display: block;
+            margin-top: 7px;
+            color: #858ba3;
+            font-size: 12px;
+        }
+
+        .flash {
+            margin-bottom: 18px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            background: #fff0f0;
+            color: #b73548;
+            font-size: 13px;
+        }
+
+        .flash.success {
+            background: #eafaf0;
+            color: #187443;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 13px 20px;
+            border: 0;
+            border-radius: 10px;
+            background: #6558f5;
+            color: white;
+            text-decoration: none;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #5043db;
+        }
+
+        .btn-light {
+            background: #eeecff;
+            color: #5141dc;
+        }
+
+        .btn-light:hover {
+            background: #e0dcff;
+        }
+
+        @media (max-width: 550px) {
+            .card {
+                padding: 22px 17px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div class="card">
+
+        <h1>🏪 Add New Shop</h1>
+
+        <p class="subtitle">
+            Register a campus shop or service provider on HostelHub.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {% if category == 'success' %}success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+
+            <div class="field">
+                <label for="shop_name">
+                    Shop Name <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="shop_name"
+                    name="shop_name"
+                    maxlength="200"
+                    placeholder="e.g. Campus Grocery Store"
+                    required
+                >
+            </div>
+
+            <div class="field">
+                <label for="category_id">
+                    Shop Category <span class="required">*</span>
+                </label>
+
+                <select
+                    id="category_id"
+                    name="category_id"
+                    required
+                >
+                    <option value="">-- Select Category --</option>
+
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <small class="hint">
+                    Select the category that best matches this shop.
+                </small>
+            </div>
+
+            <div class="field">
+                <label for="address">Shop Address</label>
+
+                <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    maxlength="300"
+                    placeholder="e.g. Near College Main Gate"
+                >
+            </div>
+
+            <div class="field">
+                <label for="opening_hours">Opening Hours</label>
+
+                <input
+                    type="text"
+                    id="opening_hours"
+                    name="opening_hours"
+                    maxlength="100"
+                    placeholder="e.g. 9:00 AM - 9:00 PM"
+                >
+            </div>
+
+            <div class="buttons">
+                <button type="submit" class="btn">
+                    ➕ Add Shop
+                </button>
+
+                <a
+                    href="{{ url_for('admin_shops') }}"
+                    class="btn btn-light"
+                >
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+</body>
+</html>

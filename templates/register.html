@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account | HostelHub{% endblock %}
+
+{% block extra_head %}
+<style>
+.register-section {
+    min-height: 85vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 45px 18px;
+    background:
+        radial-gradient(circle at 10% 10%, #efedff 0, transparent 35%),
+        radial-gradient(circle at 90% 90%, #f4eaff 0, transparent 35%),
+        #faf9ff;
+}
+
+.register-card {
+    width: 100%;
+    max-width: 1050px;
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    background: #fff;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(70, 54, 150, .13);
+}
+
+.register-visual {
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: white;
+    background: linear-gradient(145deg, #6254e8, #8b5cf6 65%, #a66bfa);
+    position: relative;
+    overflow: hidden;
+}
+
+.register-visual::before,
+.register-visual::after {
+    content: "";
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 50%;
+}
+
+.register-visual::before {
+    top: -110px;
+    right: -100px;
+}
+
+.register-visual::after {
+    bottom: -140px;
+    left: -100px;
+    width: 330px;
+    height: 330px;
+}
+
+.register-brand {
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 45px;
+    position: relative;
+    z-index: 1;
+}
+
+.register-brand span {
+    color: #e7dcff;
+}
+
+.register-illustration {
+    font-size: 65px;
+    margin-bottom: 25px;
+    position: relative;
+    z-index: 1;
+}
+
+.register-visual h2 {
+    font-size: 35px;
+    line-height: 1.25;
+    margin: 0 0 18px;
+    position: relative;
+    z-index: 1;
+}
+
+.register-visual p {
+    color: #eeeaff;
+    font-size: 14px;
+    line-height: 1.9;
+    position: relative;
+    z-index: 1;
+}
+
+.register-benefits {
+    display: grid;
+    gap: 18px;
+    margin-top: 25px;
+    position: relative;
+    z-index: 1;
+}
+
+.register-benefits div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.register-benefits i {
+    color: #d8ffdf;
+}
+
+.register-form-side {
+    padding: 45px 48px;
+}
+
+.register-eyebrow {
+    color: #6254e8;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.register-form-side h1 {
+    color: #20213b;
+    font-size: 32px;
+    margin: 0 0 9px;
+}
+
+.register-subtitle {
+    color: #85869b;
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 27px;
+}
+
+.register-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+}
+
+.register-field {
+    margin-bottom: 18px;
+}
+
+.register-field label {
+    display: block;
+    color: #34344e;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.register-input-wrap {
+    position: relative;
+}
+
+.register-input-wrap > i:first-child {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9292aa;
+}
+
+.register-input-wrap input,
+.register-input-wrap select {
+    box-sizing: border-box;
+    width: 100%;
+    height: 46px;
+    border: 1px solid #e7e6f1;
+    border-radius: 11px;
+    outline: none;
+    padding: 0 38px;
+    font: inherit;
+    font-size: 12px;
+    color: #20213b;
+    background: #fcfbff;
+    transition: .2s;
+}
+
+.register-input-wrap input:focus,
+.register-input-wrap select:focus {
+    border-color: #7668ee;
+    box-shadow: 0 0 0 4px rgba(98,84,232,.09);
+    background: white;
+}
+
+.register-input-wrap input::placeholder {
+    color: #a0a0b4;
+}
+
+.register-password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: #85869b;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.register-terms {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    color: #77788e;
+    font-size: 12px;
+    line-height: 1.7;
+    margin: 2px 0 22px;
+}
+
+.register-terms input {
+    margin-top: 4px;
+    accent-color: #6254e8;
+}
+
+.register-terms a,
+.register-footer a {
+    color: #6254e8;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.register-terms a:hover,
+.register-footer a:hover {
+    text-decoration: underline;
+}
+
+.register-submit {
+    width: 100%;
+    min-height: 49px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6254e8, #8b5cf6);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(98,84,232,.22);
+    transition: transform .2s, box-shadow .2s;
+}
+
+.register-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(98,84,232,.3);
+}
+
+.register-footer {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 12px;
+    color: #77788e;
+}
+
+.register-message {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 17px;
+    font-size: 13px;
+    background: #fff0f0;
+    color: #b42318;
+}
+
+@media (max-width: 780px) {
+    .register-card {
+        max-width: 500px;
+        grid-template-columns: 1fr;
+    }
+
+    .register-visual {
+        padding: 28px;
+    }
+
+    .register-brand {
+        margin-bottom: 22px;
+    }
+
+    .register-illustration {
+        font-size: 42px;
+        margin-bottom: 12px;
+    }
+
+    .register-visual h2 {
+        font-size: 27px;
+    }
+
+    .register-benefits {
+        display: none;
+    }
+
+    .register-form-side {
+        padding: 32px 24px;
+    }
+}
+
+@media (max-width: 420px) {
+    .register-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .register-form-side h1 {
+        font-size: 27px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="register-section">
+    <div class="register-card">
+
+        <!-- Left side: Branding -->
+        <div class="register-visual">
+            <div class="register-brand">
+                <i class="fa-solid fa-house"></i>
+                Hostel<span>Hub</span>
+            </div>
+
+            <div class="register-illustration">
+                <i class="fa-solid fa-user-graduate"></i>
+            </div>
+
+            <h2>Your campus.<br>Your community.</h2>
+
+            <p>
+                Join HostelHub and discover a smarter way to manage
+                your hostel life. Find nearby services and keep your
+                everyday needs in one place.
+            </p>
+
+            <div class="register-benefits">
+                <div>
+                    <i class="fa-solid fa-circle-check"></i>
+                    Quick and easy account creation
+                </div>
+                <div>
+                    <i class="fa-solid fa-circle-check"></i>
+                    Explore nearby shops and services
+                </div>
+                <div>
+                    <i class="fa-solid fa-circle-check"></i>
+                    One platform for hostel essentials
+                </div>
+            </div>
+        </div>
+
+        <!-- Right side: Registration form -->
+        <div class="register-form-side">
+            <div class="register-eyebrow">Get started today</div>
+
+            <h1>Create your account</h1>
+
+            <p class="register-subtitle">
+                Fill in your details to become part of HostelHub.
+            </p>
+
+            {% if error %}
+                <div class="register-message">{{ error }}</div>
+            {% endif %}
+
+            <form
+                method="POST"
+                action="{{ url_for('register') }}"
+                id="registerForm"
+            >
+                <div class="register-grid">
+
+                    <div class="register-field">
+                        <label for="full_name">Full name</label>
+                        <div class="register-input-wrap">
+                            <i class="fa-regular fa-user"></i>
+                            <input
+                                type="text"
+                                id="full_name"
+                                name="full_name"
+                                placeholder="Your full name"
+                                autocomplete="name"
+                                minlength="2"
+                                maxlength="100"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="register-field">
+                        <label for="email">Email address</label>
+                        <div class="register-input-wrap">
+                            <i class="fa-regular fa-envelope"></i>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="you@example.com"
+                                autocomplete="email"
+                                maxlength="254"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="register-field">
+                        <label for="phone">Phone number</label>
+                        <div class="register-input-wrap">
+                            <i class="fa-solid fa-phone"></i>
+                            <input
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                placeholder="10-digit mobile"
+                                autocomplete="tel"
+                                inputmode="numeric"
+                                pattern="[0-9]{10}"
+                                title="Enter a 10-digit mobile number"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="register-field">
+                        <label for="student_id">Student ID (optional)</label>
+                        <div class="register-input-wrap">
+                            <i class="fa-solid fa-id-card"></i>
+                            <input
+                                type="text"
+                                id="student_id"
+                                name="student_id"
+                                placeholder="Your college ID"
+                                maxlength="50"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="register-field">
+                        <label for="password">Create password</label>
+                        <div class="register-input-wrap">
+                            <i class="fa-solid fa-lock"></i>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="At least 8 characters"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                            >
+                            <button
+                                class="register-password-toggle"
+                                type="button"
+                                aria-label="Show password"
+                                onclick="toggleRegisterPassword('password', this)"
+                            >
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="register-field">
+                        <label for="confirm_password">Confirm password</label>
+                        <div class="register-input-wrap">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <input
+                                type="password"
+                                id="confirm_password"
+                                name="confirm_password"
+                                placeholder="Re-enter password"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                            >
+                            <button
+                                class="register-password-toggle"
+                                type="button"
+                                aria-label="Show password"
+                                onclick="toggleRegisterPassword('confirm_password', this)"
+                            >
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <label class="register-terms">
+                    <input type="checkbox" name="terms" required>
+                    <span>
+                        I agree to the HostelHub
+                        <a href="#" onclick="alert('Terms and Conditions will be added soon.'); return false;">Terms &amp; Conditions</a>
+                        and
+                        <a href="#" onclick="alert('Privacy Policy will be added soon.'); return false;">Privacy Policy</a>.
+                    </span>
+                </label>
+
+                <button type="submit" class="register-submit">
+                    Create My Account
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="register-footer">
+                Already have an account?
+                <a href="{{ url_for('login') }}">Login here</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script>
+function toggleRegisterPassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector("i");
+
+    if (input.type === "password") {
+        input.type = "text";
+        button.setAttribute("aria-label", "Hide password");
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+    } else {
+        input.type = "password";
+        button.setAttribute("aria-label", "Show password");
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+    }
+}
+
+document.getElementById("registerForm").addEventListener("submit", function (event) {
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirm_password").value;
+
+    if (password !== confirmPassword) {
+        event.preventDefault();
+        alert("Passwords do not match. Please check again.");
+        document.getElementById("confirm_password").focus();
+    }
+});
+</script>
+{% endblock %}

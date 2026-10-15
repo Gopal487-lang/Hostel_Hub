@@ -1,0 +1,21 @@
+{% extends "provider_shell.html" %}
+{% block provider_content %}
+<section class="sk-form-card">
+  <div class="sk-form-heading"><div><span class="sk-eyebrow">NEW LISTING</span><h2>Add Product</h2><p>Submit this product for admin approval. Students will see it after it is published.</p></div><a class="sk-button secondary" href="{{ url_for('provider_products') }}">My Products</a></div>
+  {% if not shop %}<div class="sk-flash error">Your account is not linked to an active shop. Ask the administrator to assign your shop.</div>{% else %}
+  <form method="POST" enctype="multipart/form-data" class="sk-product-form">
+    <div class="sk-field full"><label>Your Shop</label><input value="{{ shop.name }}" readonly></div>
+    <div class="sk-field"><label for="name">Product name *</label><input id="name" name="name" maxlength="200" required placeholder="e.g. College Backpack"></div>
+    <div class="sk-field"><label for="price">Price (₹) *</label><input id="price" name="price" type="number" min="0" step="0.01" required placeholder="299.00"></div>
+    <div class="sk-field"><label for="stock_quantity">Stock quantity *</label><input id="stock_quantity" name="stock_quantity" type="number" min="0" step="1" required value="0"></div>
+    {% if shop.category_slug == 'clothing-tailoring' %}<div class="sk-field"><label for="sizes">Available sizes</label><input id="sizes" name="sizes" maxlength="100" placeholder="S, M, L, XL"></div><div class="sk-field"><label for="out_of_stock_sizes">Out-of-stock sizes</label><input id="out_of_stock_sizes" name="out_of_stock_sizes" maxlength="100" placeholder="XL"></div>{% endif %}
+    <div class="sk-field full"><label for="description">Description</label><textarea id="description" name="description" maxlength="2000" rows="4" placeholder="Describe your product"></textarea></div>
+    <div class="sk-field full"><label for="product_image">Product image</label><input id="product_image" name="product_image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><small>JPG, PNG or WEBP, up to 5 MB.</small></div>
+    <div class="sk-field full"><label for="image_url">Or image URL</label><input id="image_url" name="image_url" type="url" maxlength="1000" placeholder="https://example.com/product.jpg"></div>
+    <div class="sk-field full sk-form-actions"><button class="sk-button" type="submit">Submit for approval</button><a class="sk-button secondary" href="{{ url_for('provider_dashboard') }}">Cancel</a></div>
+  </form>{% endif %}
+</section>
+<style>
+.sk-form-card{background:#fff;border:1px solid #e8e9f1;border-radius:14px;padding:24px}.sk-form-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.sk-form-heading h2{margin:6px 0;font-size:21px}.sk-form-heading p{margin:0;color:#73768c;font-size:13px}.sk-product-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.sk-field{min-width:0}.sk-field.full{grid-column:1/-1}.sk-field label{display:block;font-size:12px;font-weight:700;margin-bottom:7px}.sk-field input,.sk-field textarea{width:100%;padding:12px;border:1px solid #dfe1ea;border-radius:9px;font:inherit;font-size:13px}.sk-field input:focus,.sk-field textarea:focus{outline:2px solid #d9d2ff;border-color:#7460e7}.sk-field small{display:block;margin-top:6px;color:#77798e;font-size:11px}.sk-form-actions{display:flex;gap:10px;margin-top:5px}.sk-button.secondary{background:#f1f1f7;color:#36364c}.sk-button.secondary:hover{background:#e6e6ef}@media(max-width:560px){.sk-form-card{padding:16px}.sk-product-form{grid-template-columns:1fr}.sk-field.full{grid-column:auto}.sk-form-heading{flex-direction:column}}
+</style>
+{% endblock %}

@@ -1,0 +1,625 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ page_title }} | HostelHub</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 16px;
+            background: #f4f6fc;
+            color: #20243a;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: auto;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #eceef5;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 12px 35px rgba(37, 40, 75, 0.06);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 26px;
+        }
+
+        .subtitle {
+            color: #858ba3;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 20px;
+        }
+
+        .field {
+            min-width: 0;
+            margin-bottom: 22px;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .field > label {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        input,
+        textarea,
+        select {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            padding: 13px 14px;
+            border: 1px solid #e2e5f0;
+            border-radius: 10px;
+            background: #fff;
+            color: #20243a;
+            font: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #6558f5;
+            box-shadow: 0 0 0 3px rgba(101, 88, 245, 0.10);
+        }
+
+        input:disabled,
+        select:disabled,
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.6;
+        }
+
+        .hint {
+            display: block;
+            margin-top: 7px;
+            color: #858ba3;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .flash {
+            padding: 13px 15px;
+            border-radius: 10px;
+            background: #fff0f0;
+            color: #b73548;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .flash.success {
+            background: #eafaf0;
+            color: #187443;
+        }
+
+        .flash.warning {
+            background: #fff7e6;
+            color: #925d08;
+        }
+
+        /* Product image upload */
+
+        .image-upload-box {
+            margin-top: 8px;
+            padding: 18px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 14px;
+            background: #f8fafc;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .image-upload-box:hover {
+            border-color: #6558f5;
+            background: #f7f6ff;
+        }
+
+        .file-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 38px;
+        }
+
+        .upload-label strong {
+            color: #4338ca;
+            font-size: 15px;
+        }
+
+        .upload-label span:last-child {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .image-preview-wrapper {
+            width: 100%;
+            max-width: 240px;
+            margin: 12px auto 0;
+        }
+
+        #imagePreview {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+        }
+
+        #imagePreview[hidden] {
+            display: none;
+        }
+
+        .image-help {
+            margin-top: 10px;
+        }
+
+        /* Buttons */
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 43px;
+            padding: 12px 20px;
+            border: 0;
+            border-radius: 10px;
+            background: #6558f5;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .btn:hover {
+            background: #5043db;
+            transform: translateY(-1px);
+        }
+
+        .btn-light {
+            background: #eeecff;
+            color: #5141dc;
+        }
+
+        .btn-light:hover {
+            background: #e0dcff;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 16px 10px;
+            }
+
+            .card {
+                padding: 21px 17px;
+                border-radius: 14px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: auto;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .buttons .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="card">
+
+        <h1>📦 {{ page_title }}</h1>
+
+        <p class="subtitle">
+            {% if provider_mode %}Add a product for {{ fixed_shop.name }}. Admin will review it before it appears to students.{% else %}Add product details and assign the product to a shop.{% endif %}
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash
+                    {% if category == 'success' %}success
+                    {% elif category == 'warning' %}warning
+                    {% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        {% if not shops %}
+            <div class="flash warning">
+                No active shops are available. First create and activate a shop
+                in Admin → Shop Management.
+            </div>
+        {% endif %}
+
+        <!-- Keep the form open until all fields and buttons are inside it. -->
+        <form
+            id="productForm"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            {% if category_filter %}
+                <input type="hidden" name="category_filter" value="{{ category_filter }}">
+                <div class="flash success">Adding to: {{ 'Food & Snacks' if category_filter == 'food-snacks' else 'Clothing & Tailoring' }}. Only shops in this category are listed.</div>
+            {% endif %}
+
+            <div class="grid">
+
+                <!-- Product Name -->
+                <div class="field full">
+                    <label for="name">
+                        Product Name <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        maxlength="200"
+                        placeholder="e.g. College Backpack"
+                        value="{{ product.name if product else '' }}"
+                        required
+                    >
+                </div>
+
+                {% if provider_mode %}
+                <input type="hidden" name="shop_id" value="{{ fixed_shop.id }}">
+                <div class="field full"><label>Your Shop</label><input value="{{ fixed_shop.name }}" readonly></div>
+                {% endif %}
+
+                <!-- Price -->
+                <div class="field">
+                    <label for="price">
+                        Price (₹) <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="price"
+                        name="price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="299.00"
+                        value="{{ product.price if product else '' }}"
+                        required
+                    >
+                </div>
+
+                <!-- Stock -->
+                <div class="field">
+                    <label for="stock_quantity">
+                        Stock Quantity <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="stock_quantity"
+                        name="stock_quantity"
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="10"
+                        value="{{ product.stock_quantity if product else 0 }}"
+                        required
+                    >
+                </div>
+
+                <!-- Shop Dropdown: only ONE dropdown -->
+                {% if not provider_mode %}
+                <div class="field full">
+                    <label for="shop_id">
+                        Select Shop / Shopkeeper
+                        <span class="required">*</span>
+                    </label>
+
+                    <select
+                        id="shop_id"
+                        name="shop_id"
+                        required
+                        {% if not shops %}disabled{% endif %}
+                    >
+                        <option value="">-- Select a shop --</option>
+
+                        {% for shop in shops %}
+                            <option
+                                value="{{ shop.id }}"
+                                data-category="{{ shop.category_slug or '' }}"
+                                {% if product and product.shop_id == shop.id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ shop.name }} — {{ shop.category_name or 'Uncategorized' }}
+                                {% if shop.address %}
+                                    — {{ shop.address }}
+                                {% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <small class="hint">
+                        Select the shop that sells this product.
+                    </small>
+                </div>
+                {% endif %}
+
+                <!-- Product Image -->
+                <div class="field full">
+                    <label for="product_image">Product Image</label>
+
+                    {% if product and product.image_url %}
+                    <div style="margin:8px 0 12px;display:flex;align-items:center;gap:12px">
+                        <img src="{{ product.image_url }}" alt="Current {{ product.name }} image" style="width:76px;height:76px;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
+                        <small class="hint">Current image. Choose a new file below to replace it.</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="image-upload-box">
+
+                        <input
+                            class="file-input"
+                            type="file"
+                            id="product_image"
+                            name="product_image"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        >
+
+                        <label
+                            for="product_image"
+                            class="upload-label"
+                        >
+                            <span class="upload-icon">📸</span>
+                            <strong id="uploadText">
+                                Choose Product Image
+                            </strong>
+                            <span>
+                                JPG, PNG or WEBP · Maximum 5 MB
+                            </span>
+                        </label>
+
+                        <div class="image-preview-wrapper">
+                            <img
+                                id="imagePreview"
+                                alt="Product image preview"
+                                hidden
+                            >
+                        </div>
+
+                    </div>
+
+                    <small class="hint image-help">
+                        Recommended image size: 800 × 800 pixels.
+                        Square images look best in product cards.
+                    </small>
+                    <label for="image_url" style="margin-top:12px">Or use an image URL</label>
+                    <input id="image_url" name="image_url" type="url" maxlength="1000"
+                           placeholder="https://example.com/product.jpg"
+                           value="{{ product.image_url if product and product.image_url and product.image_url.startswith('http') else '' }}">
+                    <small class="hint">Uploaded file takes priority over the URL.</small>
+                </div>
+
+                <div class="field full" id="clothingSizesField" {% if not (category_filter == 'clothing-tailoring' or (product and product.shop_category_slug == 'clothing-tailoring')) %}hidden{% endif %}>
+                    <label for="sizes">Available Sizes</label>
+                    <input id="sizes" name="sizes" type="text" maxlength="100"
+                           placeholder="e.g. XS, S, M, L, XL, XXL or Free Size"
+                           value="{{ product.sizes if product and product.sizes else '' }}">
+                    <small class="hint">Sizes students can buy. Example: S, M, L.</small>
+                    <label for="out_of_stock_sizes" style="margin-top:12px">Out-of-stock Sizes</label>
+                    <input id="out_of_stock_sizes" name="out_of_stock_sizes" type="text" maxlength="100"
+                           placeholder="e.g. XL, XXL"
+                           value="{{ product.out_of_stock_sizes if product and product.out_of_stock_sizes else '' }}">
+                    <small class="hint">Unavailable sizes will be shown as Out of stock. Separate sizes with commas.</small>
+                </div>
+
+                <!-- Description -->
+                <div class="field full">
+                    <label for="description">Product Description</label>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        maxlength="2000"
+                        placeholder="Describe the product, features and specifications..."
+                    >{{ product.description if product and product.description else '' }}</textarea>
+                </div>
+
+            </div>
+
+            <!-- Form buttons -->
+            <div class="buttons">
+
+                <button
+                    class="btn"
+                    id="submitButton"
+                    type="submit"
+                    {% if not shops %}disabled{% endif %}
+                >
+                    {% if product %}
+                        Save Changes
+                    {% else %}
+                        ➕ Add Product
+                    {% endif %}
+                </button>
+
+                <a
+                    class="btn btn-light"
+                    href="{{ url_for('provider_dashboard') if provider_mode else url_for('admin_products') }}"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("productForm");
+    const input = document.getElementById("product_image");
+    const preview = document.getElementById("imagePreview");
+    const uploadText = document.getElementById("uploadText");
+    const submitButton = document.getElementById("submitButton");
+    const shopSelect = document.getElementById("shop_id");
+    const sizesField = document.getElementById("clothingSizesField");
+    function updateClothingSizeField() {
+        if (!shopSelect || !sizesField) return;
+        const selectedShop = shopSelect.options[shopSelect.selectedIndex];
+        const isClothingShop = selectedShop && selectedShop.dataset.category === "clothing-tailoring";
+        const isClothingFlow = {{ 'true' if category_filter == 'clothing-tailoring' or (product and product.shop_category_slug == 'clothing-tailoring') else 'false' }};
+        sizesField.hidden = !(isClothingShop || isClothingFlow);
+    }
+    if (shopSelect && sizesField) {
+        shopSelect.addEventListener("change", updateClothingSizeField);
+        updateClothingSizeField();
+    }
+
+    let currentPreviewUrl = null;
+
+    if (input && preview) {
+        input.addEventListener("change", function () {
+            const file = this.files && this.files[0];
+
+            if (!file) {
+                preview.hidden = true;
+                preview.removeAttribute("src");
+                uploadText.textContent = "Choose Product Image";
+                return;
+            }
+
+            const allowedTypes = [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            ];
+
+            if (!allowedTypes.includes(file.type)) {
+                alert("Please select a JPG, PNG or WEBP image.");
+                this.value = "";
+                preview.hidden = true;
+                preview.removeAttribute("src");
+                uploadText.textContent = "Choose Product Image";
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Image size must be 5 MB or less.");
+                this.value = "";
+                preview.hidden = true;
+                preview.removeAttribute("src");
+                uploadText.textContent = "Choose Product Image";
+                return;
+            }
+
+            if (currentPreviewUrl) {
+                URL.revokeObjectURL(currentPreviewUrl);
+            }
+
+            currentPreviewUrl = URL.createObjectURL(file);
+            preview.src = currentPreviewUrl;
+            preview.hidden = false;
+            uploadText.textContent = file.name;
+        });
+    }
+
+    if (form && submitButton) {
+        form.addEventListener("submit", function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                form.reportValidity();
+                return;
+            }
+
+            /*
+             * Do not disable the submit button here:
+             * the form must be submitted normally to Flask.
+             */
+        });
+    }
+});
+</script>
+
+</body>
+</html>

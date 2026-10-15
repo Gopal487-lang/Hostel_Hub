@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+.shop-management {
+    max-width: 1450px;
+    margin: auto;
+    padding: 25px;
+    color: #20243a;
+}
+
+.shop-management h1 {
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.shop-management .subtitle {
+    color: #858ba3;
+    line-height: 1.6;
+}
+
+.shop-management .panel {
+    background: white;
+    padding: 25px;
+    margin: 20px 0 30px;
+    border: 1px solid #eceef5;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(32, 36, 58, 0.04);
+}
+
+.shop-management .form-label {
+    display: block;
+    margin: 12px 0 7px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.shop-management input,
+.shop-management select,
+.shop-management textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid #dfe2ed;
+    border-radius: 9px;
+    background: white;
+    font: inherit;
+}
+
+.shop-management input:focus,
+.shop-management select:focus,
+.shop-management textarea:focus {
+    border-color: #6558f5;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(101, 88, 245, 0.12);
+}
+
+.shop-management textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.shop-management .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px 22px;
+}
+
+.shop-management .full-width {
+    grid-column: 1 / -1;
+}
+
+.shop-management .btn {
+    display: inline-block;
+    padding: 10px 15px;
+    margin: 4px 3px 4px 0;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.shop-management .btn:hover {
+    transform: translateY(-2px);
+}
+
+.shop-management .btn-primary {
+    background: #6558f5;
+    color: white;
+}
+
+.shop-management .btn-primary:hover {
+    background: #5043db;
+    color: white;
+}
+
+.shop-management .btn-secondary {
+    background: #64748b;
+    color: white;
+}
+
+.shop-management .btn-outline {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #dbe2ea;
+}
+
+.shop-management .btn-edit {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.shop-management .btn-verify {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.shop-management .btn-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.shop-management .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #eceef5;
+    border-radius: 12px;
+}
+
+.shop-management table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.shop-management th {
+    padding: 15px;
+    background: #f0efff;
+    color: #5145ce;
+    text-align: left;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.shop-management td {
+    padding: 14px 15px;
+    border-bottom: 1px solid #eceef5;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.shop-management tbody tr:hover td {
+    background: #fafaff;
+}
+
+.shop-management .badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.shop-management .badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.shop-management .badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.shop-management .badge-inactive {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.shop-management .small-text {
+    display: block;
+    color: #858ba3;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.shop-management .actions {
+    min-width: 220px;
+}
+
+.shop-management .empty-state {
+    padding: 30px;
+    text-align: center;
+    color: #858ba3;
+}
+
+@media (max-width: 650px) {
+    .shop-management {
+        padding: 14px;
+    }
+
+    .shop-management h1 {
+        font-size: 24px;
+    }
+
+    .shop-management .panel {
+        padding: 17px;
+    }
+
+    .shop-management .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-management .full-width {
+        grid-column: auto;
+    }
+}
+
+.btn-delete {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: #b91c1c;
+}
+</style>
+
+<div class="shop-management">
+
+
+<!-- PAGE HEADER -->
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+
+    <div>
+        <h1>Shop Management</h1>
+        <p class="subtitle">
+            Manage hostel shops, verification and availability.
+        </p>
+    </div>
+
+    <a href="{{ url_for('admin_dashboard') }}"
+       class="btn btn-outline">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+
+</div>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endwith %}
+
+
+<!-- ADD NEW SHOP -->
+<div class="panel">
+
+    <h4 class="mb-3">
+        <i class="fas fa-store"></i>
+        Add New Shop
+    </h4>
+
+    <form method="POST" action="{{ url_for('add_shop') }}">
+
+        <div class="form-grid">
+
+            <!-- SHOP NAME -->
+            <div>
+                <label for="shop_name" class="form-label">
+                    Shop Name <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="shop_name"
+                    name="shop_name"
+                    placeholder="e.g. Campus General Store"
+                    maxlength="150"
+                    required
+                >
+
+                <small class="text-muted">
+                    Enter the name of your shop or business.
+                </small>
+            </div>
+
+            <!-- CATEGORY -->
+            <div>
+                <label for="category_id" class="form-label">
+                    Shop Category <span class="text-danger">*</span>
+                </label>
+
+                <select
+                    name="category_id"
+                    id="category_id"
+                    required
+                >
+                    <option value="">Select a category</option>
+
+                    {% for category in categories %}
+                        <option value="{{ category['id'] }}">
+                            {{ category['icon'] or '🏪' }}
+                            {{ category['name'] }}
+                        </option>
+                    {% endfor %}
+
+                </select>
+            </div>
+
+            <div>
+                <label for="provider_id" class="form-label">Shopkeeper Account</label>
+                <select name="provider_id" id="provider_id">
+                    <option value="">No account assigned</option>
+                    {% for provider in providers %}
+                    <option value="{{ provider.id }}">{{ provider.full_name }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">The assigned shopkeeper can submit products for admin approval.</small>
+            </div>
+
+            <!-- OPENING HOURS -->
+            <div>
+                <label for="opening_hours" class="form-label">
+                    Opening Hours
+                </label>
+
+                <input
+                    type="text"
+                    id="opening_hours"
+                    name="opening_hours"
+                    placeholder="9 AM - 9 PM"
+                >
+            </div>
+
+            <!-- ADDRESS -->
+            <div>
+                <label for="address" class="form-label">
+                    Shop Address
+                </label>
+
+                <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    placeholder="Shop location inside or near hostel"
+                >
+            </div>
+
+            <!-- DESCRIPTION -->
+            <div class="full-width">
+                <label for="description" class="form-label">
+                    Shop Description
+                </label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="3"
+                    placeholder="Describe your shop, products and services..."
+                ></textarea>
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="full-width">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Add Shop
+                </button>
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- REGISTERED SHOPS -->
+<div class="panel">
+
+    <h4 class="mb-3">
+        <i class="fas fa-list"></i>
+        Registered Shops
+    </h4>
+
+    <div class="table-wrap">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Shop</th>
+                    <th>Category</th>
+                    <th>Products</th>
+                    <th>Verification</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for shop in shops %}
+
+                <tr>
+
+                    <!-- ID -->
+                    <td>{{ shop['id'] }}</td>
+
+                    <!-- SHOP DETAILS -->
+                    <td>
+                        <strong>{{ shop['name'] }}</strong>
+
+                        <span class="small-text">
+                            {{ shop['address'] or 'Address not provided' }}
+                        </span>
+                    </td>
+
+                    <!-- CATEGORY -->
+                    <td>
+                        {{ shop['category_name'] or 'Uncategorized' }}
+                    </td>
+
+                    <!-- PRODUCT COUNT -->
+                    <td>
+                        {{ shop['total_products'] }}
+                    </td>
+
+                    <!-- VERIFICATION -->
+                    <td>
+
+                        {% if shop['is_verified'] %}
+                            <span class="badge badge-success">
+                                Verified
+                            </span>
+                        {% else %}
+                            <span class="badge badge-warning">
+                                Pending
+                            </span>
+                        {% endif %}
+
+                    </td>
+
+                    <!-- ACTIVE STATUS -->
+                    <td>
+
+                        {% if shop['is_active'] %}
+                            <span class="badge badge-success">
+                                Active
+                            </span>
+                        {% else %}
+                            <span class="badge badge-inactive">
+                                Inactive
+                            </span>
+                        {% endif %}
+
+                    </td>
+
+                    <!-- ACTIONS: MUST REMAIN INSIDE THE SHOP LOOP -->
+                    <td class="actions">
+
+                        <!-- EDIT SHOP -->
+                        <a
+                            href="{{ url_for('edit_shop', shop_id=shop['id']) }}"
+                            class="btn btn-edit">
+                            <i class="fas fa-edit"></i>
+                            Edit
+                        </a>
+
+                        <!-- VERIFY SHOP -->
+                        {% if not shop['is_verified'] %}
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('verify_shop', shop_id=shop['id']) }}"
+                                style="display:inline; padding:0; margin:0; border:0; box-shadow:none;"
+                            >
+                                <button
+                                    type="submit"
+                                    class="btn btn-verify"
+                                >
+                                    <i class="fas fa-check"></i>
+                                    Verify
+                                </button>
+                            </form>
+
+                        {% endif %}
+
+                        <!-- ACTIVATE / DEACTIVATE -->
+                        <form
+                            method="POST"
+                            action="{{ url_for('toggle_shop', shop_id=shop['id']) }}"
+                            style="display:inline; padding:0; margin:0; border:0; box-shadow:none;"
+                        >
+                            <button
+                                type="submit"
+                                class="btn btn-outline"
+                            >
+                                {% if shop['is_active'] %}
+                                    <i class="fas fa-ban"></i>
+                                    Deactivate
+                                {% else %}
+                                    <i class="fas fa-check-circle"></i>
+                                    Activate
+                                {% endif %}
+                            </button>
+                        </form>
+                    
+<form method="POST"
+      action="{{ url_for('delete_shop', shop_id=shop['id']) }}"
+      onsubmit="return confirm('Are you sure you want to delete this shop? This action cannot be undone.');"
+      style="display: inline-block;">
+
+    <button type="submit" class="btn btn-delete">
+        Delete
+    </button>
+
+</form>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="7" class="empty-state">
+                        <i class="fas fa-store fa-2x mb-2"></i>
+                        <br>
+                        No shops found. Add your first shop above.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+{% endblock %}

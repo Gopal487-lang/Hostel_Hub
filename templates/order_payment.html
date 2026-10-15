@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Pay Order #{{ order.id }} | HostelHub{% endblock %}
+{% block content %}
+<style>
+.op-page{max-width:900px;margin:34px auto;padding:0 18px}.op-card{padding:clamp(20px,4vw,34px);border:1px solid #e5e7eb;border-radius:20px;background:var(--card-bg,#fff);box-shadow:0 12px 36px #1e293b0c}.op-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:1px solid #e8ebf2;padding-bottom:18px}.op-head h1{margin:0 0 8px;font-size:clamp(24px,4vw,32px)}.op-muted{color:#64748b;line-height:1.55}.op-badge{padding:8px 12px;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:750}.op-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.op-summary div{padding:14px;border-radius:12px;background:#f8fafc}.op-summary small{display:block;margin-bottom:5px;color:#64748b}.op-amount{font-size:22px;font-weight:850;color:#30275f}.op-methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:22px}.op-method{padding:18px;border:1px solid #e7eaf1;border-radius:15px}.op-method h2{margin:0 0 10px;font-size:18px}.op-upi{padding:11px;border-radius:9px;background:#f8fafc;font-weight:750;overflow-wrap:anywhere}.op-qr{display:block;width:min(100%,260px);height:auto;max-height:260px;object-fit:contain;margin:12px auto;padding:8px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}.op-btn{display:inline-flex;justify-content:center;align-items:center;padding:11px 15px;border:0;border-radius:10px;background:#4f46e5;color:#fff;text-decoration:none;font-weight:750;cursor:pointer}.op-btn.secondary{background:#eef2ff;color:#4338ca}.op-warn,.op-success{margin-top:18px;padding:14px;border-radius:11px;line-height:1.5}.op-warn{background:#fff7ed;color:#9a3412}.op-success{background:#ecfdf5;color:#047857}.op-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.op-submit-payment{display:grid;gap:9px;max-width:520px;margin-top:18px;padding:16px;border:1px solid #e7eaf1;border-radius:14px;background:#f8fafc}.op-submit-payment label{font-weight:750}.op-submit-payment input{box-sizing:border-box;width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}@media(max-width:600px){.op-page{margin:18px auto;padding:0 12px}.op-card{padding:18px 14px}.op-head{flex-direction:column}.op-summary{grid-template-columns:1fr}}
+</style>
+<main class="op-page">
+    <article class="op-card">
+        <header class="op-head"><div><h1>💳 Complete your payment</h1><p class="op-muted">Payment details for HostelHub order #{{ order.id }}</p></div><span class="op-badge">{% set pay_state=(order.payment_status or 'Pending')|lower %}{% if pay_state in ['verified','paid','success','successful','completed'] %}✓ Paid · Verified{% elif pay_state == 'verification pending' %}⏳ Waiting for Admin{% else %}{{ (order.payment_status or 'Pending')|title }}{% endif %}</span></header>
+        <section class="op-summary" aria-label="Order payment summary">
+            <div><small>Order</small><strong>#{{ order.id }} · {{ (order.order_type or 'Order')|title }}</strong></div>
+            <div><small>Amount due</small><strong class="op-amount">₹{{ '%.2f'|format(order.total_amount or 0) }}</strong></div>
+            <div><small>Order status</small><strong>{{ (order.status or 'Pending')|replace('_',' ')|title }}</strong></div>
+        </section>
+        {% set pay_state=(order.payment_status or 'Pending')|lower %}
+        {% if pay_state in ['verified','paid','success','successful','completed'] %}
+            <div class="op-success">✓ Payment verified by the admin for this order.</div>
+        {% elif pay_state == 'verification pending' %}
+            <div class="op-warn"><strong>⏳ Payment received for review.</strong><br>Your payment submission is waiting for admin verification. You can stay on this page; the admin will update the status after checking it.</div>
+            {% if order.payment_reference %}<p class="op-muted">Your transaction reference: <strong>{{ order.payment_reference }}</strong></p>{% endif %}
+        {% else %}
+            {% if pay_state == 'rejected' %}<div class="op-warn">Admin could not verify the previous submission. Check the payment details and submit again after paying.</div>{% endif %}
+            {% if payment_settings.get('upi_id') or payment_settings.get('payment_qr') %}
+            <section class="op-methods" aria-label="Available payment methods">
+                {% if payment_settings.get('upi_id') %}
+                <div class="op-method"><h2>Pay with UPI</h2><p class="op-muted">UPI ID</p><div class="op-upi" id="orderUpiId">{{ payment_settings.get('upi_id') }}</div><p><button class="op-btn secondary" type="button" id="copyOrderUpi">Copy UPI ID</button></p><a class="op-btn" id="openUpiApp" target="_blank" rel="noopener" href="upi://pay?pa={{ payment_settings.get('upi_id')|urlencode }}&amp;pn={{ (payment_settings.get('hostel_name') or 'HostelHub')|urlencode }}&amp;am={{ '%.2f'|format(order.total_amount or 0) }}&amp;cu=INR&amp;tn={{ ('HostelHub Order #' ~ order.id)|urlencode }}">Open UPI app · Pay ₹{{ '%.2f'|format(order.total_amount or 0) }}</a><div class="op-warn" id="upiFallback" hidden>UPI app link is supported on phones with a UPI app installed. On a computer, copy the UPI ID and pay from your phone, or scan the QR code with your phone.</div></div>
+                {% endif %}
+                {% if payment_settings.get('payment_qr') %}
+                <div class="op-method"><h2>Scan payment QR</h2><p class="op-muted">Scan with your UPI app and pay the amount shown above.</p><img class="op-qr" src="{{ url_for('uploaded_file', folder='payments', filename=payment_settings.get('payment_qr')) }}" alt="Admin payment QR code for order #{{ order.id }}"></div>
+                {% endif %}
+            </section>
+            <p class="op-muted">After paying in your UPI app or by scanning the QR, return here and submit your payment for verification. This page will remain open.</p>
+            <form class="op-submit-payment" method="post" action="{{ url_for('submit_order_payment', order_id=order.id) }}">
+                <label for="payment-reference">Transaction reference / UTR (optional)</label>
+                <input id="payment-reference" name="payment_reference" maxlength="120" placeholder="Add the UPI transaction ID if available">
+                <button class="op-btn" type="submit">✓ I’ve Paid — Submit for Verification</button>
+            </form>
+            {% else %}
+            <div class="op-warn">The admin has not added a UPI ID or QR code yet. Please check again later or contact the hostel office.</div>
+            {% endif %}
+        {% endif %}
+        <nav class="op-actions" aria-label="Payment navigation"><a class="op-btn secondary" href="{{ url_for('my_orders') }}">Back to My Orders</a><a class="op-btn secondary" href="{{ url_for('student_dashboard') }}#section-payments">Payment dashboard</a></nav>
+    </article>
+</main>
+<script>
+(() => {
+    const copyButton = document.getElementById("copyOrderUpi");
+    const upiValue = document.getElementById("orderUpiId");
+    if (copyButton && upiValue) {
+        copyButton.addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(upiValue.textContent.trim());
+                copyButton.textContent = "UPI ID copied";
+            } catch (_) {
+                window.prompt("Copy this UPI ID:", upiValue.textContent.trim());
+            }
+        });
+    }
+
+    const openButton = document.getElementById("openUpiApp");
+    const fallback = document.getElementById("upiFallback");
+    if (!openButton || !fallback) return;
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (!mobile) {
+        fallback.hidden = false;
+        return;
+    }
+
+    if (/Android/i.test(navigator.userAgent)) {
+        openButton.addEventListener("click", event => {
+            event.preventDefault();
+            const query = openButton.href.replace(/^upi:\/\/pay\?/, "");
+            const intent = "intent://pay?" + query + "#Intent;scheme=upi;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end";
+            window.open(intent, "_blank");
+            window.setTimeout(() => { fallback.hidden = false; }, 1800);
+        });
+    } else {
+        openButton.addEventListener("click", () => {
+            window.setTimeout(() => { fallback.hidden = false; }, 1800);
+        });
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+.order-page{padding:24px;color:var(--text-primary,#1e293b)}
+.order-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:24px}
+.order-heading h1{margin:0 0 6px;font-size:28px}
+.order-heading p{margin:0;opacity:.7}
+.order-btn{display:inline-block;padding:10px 15px;border-radius:9px;text-decoration:none;border:0;cursor:pointer;background:#4f46e5;color:white;font-weight:600}
+.order-stats{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:14px;margin-bottom:22px}
+.order-stat{padding:18px;border-radius:14px;background:var(--card-bg,#fff);border:1px solid var(--border-color,#e5e7eb);box-shadow:0 5px 18px rgba(0,0,0,.04)}
+.order-stat span{display:block;font-size:13px;opacity:.7}
+.order-stat strong{display:block;font-size:27px;margin-top:8px}
+.order-filter{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
+.order-filter input,.order-filter select,.order-status-select{padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;background:var(--card-bg,white);color:inherit}
+.order-table-wrap{overflow-x:auto;background:var(--card-bg,white);border-radius:14px;border:1px solid var(--border-color,#e5e7eb)}
+.order-table{width:100%;border-collapse:collapse;min-width:1050px}
+.order-table th,.order-table td{padding:14px;text-align:left;border-bottom:1px solid var(--border-color,#e5e7eb);vertical-align:top}
+.order-table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;background:var(--surface-bg,#f8fafc)}
+.order-table td{font-size:13px}
+.order-id{font-weight:800;color:#4f46e5}
+.order-customer{font-weight:700;margin-bottom:4px}
+.order-muted{opacity:.7;font-size:12px;margin-top:4px}
+.order-badge{display:inline-block;padding:5px 9px;border-radius:20px;font-size:11px;font-weight:700;background:#eef2ff;color:#4338ca}
+.order-badge[data-status="Delivered"]{background:#dcfce7;color:#166534}
+.order-badge[data-status="Cancelled"],.order-badge[data-status="Refunded"]{background:#fee2e2;color:#991b1b}
+.order-badge[data-status="Pending"],.order-badge[data-status="Refund Requested"]{background:#fef3c7;color:#92400e}
+.order-payment{font-weight:700}
+.order-payment[data-payment="Paid"]{color:#15803d}
+.order-update{display:flex;flex-direction:column;gap:8px;min-width:165px}
+.order-empty{padding:35px;text-align:center;opacity:.7}
+@media(max-width:1100px){.order-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.order-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.order-page{padding:14px}.order-heading h1{font-size:23px}}
+</style>
+
+<div class="order-page">
+    <div class="order-heading">
+    <div>
+        <h1>🛒 Order Management</h1>
+        <p>Update delivery progress and verify UPI payments against your bank records.</p>
+    </div>
+
+
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a class="order-btn"
+       href="{{ url_for('admin_dashboard') }}"
+       style="background:#64748b;">
+        ← Back to Dashboard
+    </a>
+
+    <a class="order-btn"
+       href="{{ url_for('export_orders') }}">
+        ⬇ Export CSV
+    </a>
+</div>
+
+
+</div>
+
+
+<div class="order-stats">
+    <div class="order-stat"><span>All Orders</span><strong>{{ counts.all_orders or 0 }}</strong></div>
+    <div class="order-stat"><span>Pending Orders</span><strong>{{ counts.pending or 0 }}</strong></div>
+    <div class="order-stat"><span>Active Orders</span><strong>{{ counts.active or 0 }}</strong></div>
+    <div class="order-stat"><span>Completed</span><strong>{{ counts.completed or 0 }}</strong></div>
+    <div class="order-stat"><span>Cancelled / Refunds</span><strong>{{ counts.cancelled or 0 }}</strong></div>
+</div>
+
+<form method="GET" action="{{ url_for('admin_orders') }}" class="order-filter">
+    <input type="search" name="search" value="{{ search }}" placeholder="Search order ID, student or email">
+
+    <select name="status">
+        <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Orders</option>
+        {% for status in statuses %}
+            <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+        {% endfor %}
+    </select>
+
+    <button class="order-btn" type="submit">Apply Filters</button>
+    <a class="order-btn" href="{{ url_for('admin_orders') }}" style="background:#64748b">Reset</a>
+</form>
+
+<div class="order-table-wrap">
+    <table class="order-table">
+        <thead>
+            <tr>
+                <th>Order</th>
+                <th>Student</th>
+                <th>Items</th>
+                <th>Amount</th>
+                <th>Payment Verification</th>
+                <th>Delivery Address</th>
+                <th>Order Status</th>
+                <th>Update Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>
+                    <div class="order-id">#{{ order.id }}</div>
+                    <div class="order-muted">{{ order.created_at }}</div>
+                </td>
+                <td>
+                    <div class="order-customer">{{ order.student_name }}</div>
+                    <div class="order-muted">{{ order.student_email }}</div>
+                </td>
+                <td>{{ order.item_summary or 'No product details' }}</td>
+                <td><strong>₹{{ "%.2f"|format(order.total_amount or 0) }}</strong></td>
+                <td>
+                    <span class="order-payment" data-payment="{{ order.payment_status }}">
+                        {{ order.payment_status or 'Pending' }}
+                    </span>
+                    {% if order.payment_reference %}<div class="order-muted">Transaction ref: {{ order.payment_reference }}</div>{% endif %}
+                    {% if (order.payment_status or '').strip().lower() == 'verification pending' %}
+                    <form class="order-update" method="POST"
+                          action="{{ url_for('verify_order_payment', order_id=order.id) }}"
+                          onsubmit="return confirm('Verify the payment for order #{{ order.id }}?')">
+                        <button class="order-btn" type="submit" style="background:#16804a">✓ Verify Payment</button>
+                    </form>
+                    {% endif %}
+                    <form class="order-update" method="POST"
+                          action="{{ url_for('update_order_payment_status', order_id=order.id) }}"
+                          onsubmit="return confirm('Save payment verification status for order #{{ order.id }}?')">
+                        <select class="order-status-select" name="payment_status" required aria-label="Payment status for order #{{ order.id }}">
+                            {% for payment_status in payment_statuses %}
+                            <option value="{{ payment_status }}" {% if (order.payment_status or 'Pending') == payment_status %}selected{% endif %}>{{ payment_status }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="order-btn" type="submit">Save Payment</button>
+                    </form>
+                </td>
+                <td>{{ order.delivery_address or 'Not provided' }}</td>
+                <td>
+                    <span class="order-badge" data-status="{{ order.status }}">{{ order.status }}</span>
+                </td>
+                <td>
+                    {% if order.status == 'Delivered' %}
+                        <span class="order-muted">Completed order</span>
+                    {% else %}
+                        <form class="order-update" method="POST"
+                              action="{{ url_for('update_order_status', order_id=order.id) }}"
+                              onsubmit="return confirm('Update order #{{ order.id }} status?')">
+                            <select class="order-status-select" name="status" required>
+                                {% for status in statuses %}
+                                    <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="order-btn" type="submit">Save Status</button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="order-empty">
+                    <h3>📦 No orders found</h3>
+                    <p>Orders will appear here when available.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</div>
+{% endblock %}

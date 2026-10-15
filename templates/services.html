@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} | HostelHub{% endblock %}
+{% block content %}
+<style>
+.svc-page{max-width:1180px;margin:28px auto;padding:0 18px}.svc-hero{padding:26px;border-radius:18px;background:linear-gradient(120deg,#edf2ff,#e9f8f3);margin-bottom:18px}.svc-hero h1{margin:0 0 7px}.svc-muted{color:#6e778c;font-size:13px;line-height:1.55}.svc-nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.svc-nav a{padding:8px 11px;border-radius:9px;border:1px solid #dcd8ff;color:#5946cb;background:#fff;text-decoration:none;font-size:13px;font-weight:650}.svc-nav a[aria-current="page"]{background:#6558f5;color:#fff;border-color:#6558f5}.svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px}.svc-card{padding:18px;border-radius:15px;background:#fff;border:1px solid #e7eaf1;box-shadow:0 6px 20px #25335108}.svc-card h2,.svc-card h3{margin:0 0 8px}.svc-price{font-size:20px;font-weight:800;margin:14px 0}.svc-form{display:grid;gap:10px;margin-top:14px}.svc-form label{font-weight:650;font-size:13px}.svc-form input,.svc-form textarea{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #d8ddea;border-radius:9px;font:inherit}.svc-form textarea{min-height:80px;resize:vertical}.svc-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border:0;border-radius:9px;background:#6558f5;color:#fff;text-decoration:none;font-weight:700;cursor:pointer}.svc-flash{padding:11px 14px;border-radius:9px;background:#e8f7ee;margin:10px 0}.svc-flash.error{background:#ffeded;color:#9d2c37}.svc-status{display:inline-block;padding:5px 9px;border-radius:20px;background:#eeeaff;color:#5744c1;font-size:12px;font-weight:700}.svc-empty{padding:18px;color:#6e778c}.svc-table{width:100%;border-collapse:collapse}.svc-table th,.svc-table td{text-align:left;padding:11px;border-bottom:1px solid #eceff5;vertical-align:top}.svc-table th{font-size:11px;color:#6e778c;text-transform:uppercase}.svc-table-wrap{overflow:auto}@media(max-width:600px){.svc-hero{padding:19px}.svc-table{min-width:620px}}
+.svc-track-link{display:inline-block;margin-top:7px;color:#5946cb;font-weight:700;text-decoration:none}.svc-track-link:hover{text-decoration:underline}
+</style>
+<main class="svc-page">
+    <section class="svc-hero">
+        <h1>🛠️ {{ page_title }}</h1>
+        <p class="svc-muted">Browse active campus services, send a booking request and track updates from the admin.</p>
+        <a class="svc-btn" href="{{ url_for('student_dashboard') }}#section-services">← Student Dashboard</a>
+        <nav class="svc-nav" aria-label="Service pages">
+            {% for slug,label in service_categories.items() %}<a href="{{ url_for('student_services_page', category=slug) }}" {{ 'aria-current=page' if category == slug }}>{{ label }}</a>{% endfor %}
+        </nav>
+    </section>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for kind,message in messages %}<div class="svc-flash {{ 'error' if kind == 'error' else '' }}">{{ message }}</div>{% endfor %}{% endwith %}
+
+    {% if category == 'requests' %}
+    <section class="svc-card"><h2>My Service Requests</h2><div class="svc-table-wrap"><table class="svc-table"><thead><tr><th>Service</th><th>Details</th><th>Preferred time</th><th>Status</th><th>Admin reply</th><th>Submitted</th></tr></thead><tbody>
+        {% for booking in bookings %}<tr><td>{{ booking.service_name }}</td><td>{{ booking.details }}</td><td>{{ booking.preferred_at or 'Flexible' }}</td><td><span class="svc-status">{{ booking.status }}</span></td><td>{{ booking.admin_notes or '—' }}</td><td>{{ booking.created_at }}<br><a class="svc-track-link" href="{{ url_for('track_service_booking', booking_id=booking.id) }}">Track this request →</a></td></tr>
+        {% else %}<tr><td colspan="6" class="svc-empty">No service requests yet. Choose a service page above to book one.</td></tr>{% endfor %}
+    </tbody></table></div></section>
+    {% else %}
+    <section class="svc-grid">
+        {% for service in services %}<article class="svc-card">
+            <h2>{{ service.name }}</h2><p class="svc-muted">{{ service.description or 'Campus service available for students.' }}</p>
+            <p class="svc-muted">{{ service.shop_name or service.provider_name or 'Campus service provider' }}{% if service.shop_address %}<br>{{ service.shop_address }}{% endif %}</p>
+            <div class="svc-price">₹{{ '%.2f'|format(service.price or 0) }} <span class="svc-muted">· about {{ service.estimated_minutes or 30 }} min</span></div>
+            <form class="svc-form" method="post" action="{{ url_for('book_service', service_id=service.id) }}">
+                <label>Preferred date &amp; time (optional)<input type="datetime-local" name="preferred_at"></label>
+                <label>Request details *<textarea name="details" required maxlength="1200" placeholder="Tell the provider what you need"></textarea></label>
+                <button class="svc-btn" type="submit">Request this service</button>
+            </form>
+        </article>
+        {% else %}<p class="svc-empty">No {{ page_title|lower }} are currently available. The admin will list them here when ready.</p>{% endfor %}
+    </section>
+    <p style="margin-top:20px"><a class="svc-btn" href="{{ url_for('student_services_page', category='requests') }}">Track my requests →</a></p>
+    {% endif %}
+</main>
+{% endblock %}

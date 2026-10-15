@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="sk-dashboard">
+  <aside class="sk-sidebar" id="skSidebar">
+    <a class="sk-brand" href="{{ url_for('provider_dashboard') }}"><span class="sk-logo">H</span><span>Hostel<span>Hub</span><small>SHOPKEEPER SPACE</small></span></a>
+    <div class="sk-user"><div class="sk-avatar">{{ session.get('user_name', 'S')[0]|upper }}</div><div><strong>{{ session.get('user_name', 'Shopkeeper') }}</strong><small>Shopkeeper Account</small></div></div>
+    <p class="sk-label">MAIN MENU</p>
+    <nav class="sk-nav">
+      <a class="{{ 'active' if active_page == 'overview' else '' }}" href="{{ url_for('provider_dashboard') }}"><i>⌂</i><span>Overview</span></a>
+      <a class="{{ 'active' if active_page == 'products' else '' }}" href="{{ url_for('provider_products') }}"><i>▣</i><span>My Products</span></a>
+      <a class="{{ 'active' if active_page == 'add_product' else '' }}" href="{{ url_for('provider_add_product') }}"><i>＋</i><span>Add Product</span></a>
+      <a class="{{ 'active' if active_page == 'services' else '' }}" href="{{ url_for('provider_services') }}"><i>⚙</i><span>My Services</span></a>
+    </nav>
+    <a class="sk-logout" href="{{ url_for('logout') }}">↪ &nbsp; Logout</a>
+  </aside>
+  <main class="sk-main">
+    <header class="sk-topbar"><button type="button" class="sk-menu-toggle" id="hubMenuToggle" aria-label="Open dashboard menu" aria-expanded="false">☰</button><div><small>SHOPKEEPER SPACE</small><h1>{{ page_heading }}</h1></div><div class="sk-top-user">{{ session.get('user_name', 'S')[0]|upper }}</div></header>
+    <div class="sk-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="sk-flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+      {% block provider_content %}{% endblock %}
+    </div>
+  </main>
+</div>
+<button type="button" class="sk-menu-overlay" id="skMenuOverlay" aria-label="Close dashboard menu" hidden></button>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const dashboard = document.querySelector(".sk-dashboard");
+  const toggle = document.getElementById("hubMenuToggle");
+  const overlay = document.getElementById("skMenuOverlay");
+  if (!dashboard || !toggle || !overlay) return;
+  function setMenu(open) {
+    dashboard.classList.toggle("sk-menu-open", open);
+    overlay.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Close dashboard menu" : "Open dashboard menu");
+  }
+  toggle.addEventListener("click", function () { setMenu(!dashboard.classList.contains("sk-menu-open")); });
+  overlay.addEventListener("click", function () { setMenu(false); });
+  dashboard.querySelectorAll(".sk-nav a").forEach(function (link) { link.addEventListener("click", function () { setMenu(false); }); });
+  document.addEventListener("keydown", function (event) { if (event.key === "Escape") setMenu(false); });
+});
+</script>
+<style>
+.sk-dashboard{display:flex;min-height:calc(100vh - 120px);background:#f5f6fb;color:#20243a;border-radius:18px;overflow:hidden;margin:24px auto;max-width:1500px}.sk-sidebar{width:250px;flex:none;background:#111126;color:#fff;padding:24px 16px;display:flex;flex-direction:column}.sk-brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:#fff;font-size:16px;font-weight:800;padding:0 7px 25px}.sk-brand>span:last-child>span{color:#a991ff}.sk-brand small{display:block;color:#8585a6;font-size:9px;letter-spacing:1.5px;margin-top:4px}.sk-logo{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#8068f8,#a04ee7);font-size:22px}.sk-user{display:flex;align-items:center;gap:10px;padding:14px 7px;border-block:1px solid #292941}.sk-avatar,.sk-top-user{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#7661db;color:#fff;font-weight:800}.sk-user strong,.sk-user small{display:block}.sk-user strong{font-size:12px}.sk-user small{font-size:10px;color:#a4a3bc;margin-top:4px}.sk-label{font-size:9px;letter-spacing:1.7px;color:#777791;margin:24px 8px 9px}.sk-nav{display:grid;gap:6px}.sk-nav a{display:flex;align-items:center;gap:12px;color:#b8b7cc;text-decoration:none;padding:12px;border-radius:10px;font-size:12px}.sk-nav a i{font-style:normal;font-size:18px;width:20px;text-align:center}.sk-nav a:hover,.sk-nav a.active{background:#282444;color:#fff}.sk-nav a.active{box-shadow:inset 3px 0 #a18aff}.sk-logout{margin-top:auto;padding:16px 10px 0;color:#aaa9c5;text-decoration:none;font-size:13px}.sk-main{flex:1;min-width:0}.sk-topbar{height:80px;background:#fff;border-bottom:1px solid #e7e8f0;padding:14px 30px;display:flex;align-items:center;justify-content:space-between}.sk-topbar small,.sk-eyebrow{color:#7661db;font-size:9px;letter-spacing:1.5px;font-weight:800}.sk-topbar h1{font-size:21px;margin:4px 0 0}.sk-top-user{width:37px;height:37px}.sk-content{padding:25px 30px;max-width:1250px;margin:auto}.sk-button{display:inline-flex;align-items:center;justify-content:center;background:#7460e7;color:#fff;border:0;border-radius:9px;padding:11px 16px;text-decoration:none;font-weight:700;font-size:12px;white-space:nowrap}.sk-button:hover{background:#604bd2;color:#fff}.sk-panel,.sk-card{background:#fff;border:1px solid #e8e9f1;border-radius:14px;padding:19px}.sk-panel{margin-top:15px}.sk-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.sk-panel h2,.sk-card h2{font-size:18px;margin:5px 0}.sk-eyebrow{display:block}.sk-welcome{padding:27px 30px;border-radius:17px;background:linear-gradient(120deg,#29234e,#523a7d);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:20px}.sk-welcome>div>span{font-size:9px;letter-spacing:1.7px;color:#c5b8ff;font-weight:800}.sk-welcome h2{font-size:24px;margin:10px 0}.sk-welcome p{max-width:690px;margin:0;color:#d6d1e8;font-size:13px;line-height:1.6}.sk-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0}.sk-stats article{background:#fff;border:1px solid #e8e9f1;border-radius:14px;padding:19px}.sk-stats span,.sk-stats strong{display:block}.sk-stats span{color:#73768c;font-size:12px}.sk-stats strong{font-size:27px;margin-top:8px}.sk-table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:12px}th{text-align:left;color:#77798e;font-size:10px;text-transform:uppercase;letter-spacing:.7px}td,th{padding:13px 10px;border-bottom:1px solid #eff0f5}td strong,td small{display:block}td small{color:#85879b;margin-top:4px}.sk-badge{display:inline-block;border:0;border-radius:20px;padding:7px 10px;font-size:10px;font-weight:700;white-space:nowrap}.sk-badge.published{background:#dcfce7;color:#166534}.sk-badge.pending{background:#fff2d4;color:#98620b}.sk-service-list article{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 0;border-top:1px solid #eff0f5}.sk-service-list p{font-size:12px;color:#777;margin:5px 0}.sk-service-list small{color:#777}.sk-empty{text-align:center;padding:27px;color:#77798e}.sk-empty>span{font-size:28px}.sk-empty h3{color:#292b40;margin:10px 0}.sk-empty p{font-size:12px}.sk-flash{padding:12px 15px;border-radius:9px;margin-bottom:14px;background:#e7f8ec;color:#166534;font-size:13px}.sk-flash.error{background:#fff0f0;color:#b73548}.sk-menu-toggle{display:none}.sk-menu-overlay{display:none}
+@media(max-width:850px){.sk-dashboard{overflow:visible;position:relative}.sk-sidebar{position:fixed;z-index:1302;top:0;bottom:0;left:0;width:270px;max-width:84vw;padding:24px 16px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:12px 0 35px #11112633}.sk-dashboard.sk-menu-open .sk-sidebar{transform:translateX(0)}.sk-menu-overlay:not([hidden]){display:block;position:fixed;z-index:1301;inset:0;border:0;background:rgba(12,12,28,.48)}.sk-content{padding:16px}.sk-topbar{padding:14px 18px;justify-content:flex-start;gap:13px}.sk-top-user{margin-left:auto}}
+@media(max-width:520px){.sk-dashboard{margin:0 -12px;border-radius:0}.sk-welcome{align-items:flex-start;flex-direction:column;padding:21px}.sk-welcome h2{font-size:20px}.sk-stats{gap:8px}.sk-stats article{padding:13px}.sk-stats span{font-size:10px}.sk-stats strong{font-size:22px}.sk-panel{padding:14px}.sk-panel-head{align-items:flex-start}.sk-panel-head .sk-button{padding:9px;font-size:10px}.sk-service-list article{align-items:flex-start;flex-direction:column}}
+</style>
+{% endblock %}

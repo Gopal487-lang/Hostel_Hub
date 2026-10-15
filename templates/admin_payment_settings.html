@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Payment Details | HostelHub Admin{% endblock %}
+{% block content %}
+<style>
+.pay-settings{max-width:850px;margin:32px auto;padding:0 18px}.pay-card{padding:clamp(20px,4vw,32px);border:1px solid #e5e7eb;border-radius:18px;background:var(--card-bg,#fff);box-shadow:0 8px 28px #0f172a0b}.pay-card h1{margin:0 0 8px}.pay-muted{color:#64748b;line-height:1.55}.pay-form{display:grid;gap:18px;margin-top:24px}.pay-field label{display:block;margin-bottom:7px;font-weight:700}.pay-field input[type=text],.pay-field input[type=file]{box-sizing:border-box;width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}.pay-field small{display:block;margin-top:7px;color:#64748b}.pay-qr{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:13px}.pay-qr img{width:150px;height:150px;object-fit:contain;padding:6px;border:1px solid #e2e8f0;border-radius:12px;background:white}.pay-check{display:flex;align-items:center;gap:8px}.pay-actions{display:flex;gap:10px;flex-wrap:wrap}.pay-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border:0;border-radius:10px;background:#4f46e5;color:white;text-decoration:none;font-weight:750;cursor:pointer}.pay-btn.secondary{background:#eef2ff;color:#4338ca}.pay-flash{margin:12px 0;padding:12px 14px;border-radius:10px;background:#dcfce7;color:#166534}.pay-flash.error{background:#fee2e2;color:#991b1b}.pay-current{margin-top:22px;padding:18px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.pay-current h2{margin-top:0;font-size:18px}.pay-current>p{overflow-wrap:anywhere}.pay-current .pay-qr{margin-bottom:16px}
+</style>
+<main class="pay-settings">
+    <section class="pay-card">
+        <h1>💳 Payment Details</h1>
+        <p class="pay-muted">Set the UPI ID and QR code students see on their individual order payment options and payment page.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="pay-flash {{ 'error' if category in ['error','danger'] else '' }}">{{ message }}</div>{% endfor %}{% endwith %}
+        <section class="pay-current" aria-label="Current payment details">
+            <h2>Current payment details</h2>
+            <p><strong>UPI ID:</strong> {{ settings.get('upi_id') or 'Not added yet' }}</p>
+            {% if settings.get('payment_qr') %}
+            <div class="pay-qr"><img src="{{ url_for('uploaded_file', folder='payments', filename=settings.get('payment_qr')) }}" alt="Current payment QR code"><span>QR code is active for student payments.</span></div>
+            {% else %}<p class="pay-muted">No QR code uploaded yet.</p>{% endif %}
+            <button class="pay-btn" type="button" id="editPaymentDetails">✏️ Edit Payment Details</button>
+        </section>
+        <form class="pay-form" id="paymentDetailsForm" method="post" action="{{ url_for('admin_payment_settings') }}" enctype="multipart/form-data" hidden>
+            <div class="pay-field">
+                <label for="payment-upi">Edit UPI ID</label>
+                <input id="payment-upi" type="text" name="upi_id" value="{{ settings.get('upi_id','') }}" placeholder="hostelhub@bank" autocomplete="off">
+                <small>Pay Now opens the student's UPI app with the order amount and order number prefilled.</small>
+            </div>
+            <div class="pay-field">
+                <label for="payment-qr">Upload / replace payment QR code</label>
+                <input id="payment-qr" type="file" name="payment_qr" accept="image/png,image/jpeg,image/webp">
+                <small>Upload a PNG, JPG or WebP image up to 5 MB. Uploading a new QR replaces the previous one.</small>
+                {% if settings.get('payment_qr') %}
+                <div class="pay-qr">
+                    <img src="{{ url_for('uploaded_file', folder='payments', filename=settings.get('payment_qr')) }}" alt="Current payment QR code">
+                    <label class="pay-check"><input type="checkbox" name="remove_payment_qr" value="1"> Remove current QR code</label>
+                </div>
+                {% else %}<p class="pay-muted">No QR code uploaded yet.</p>{% endif %}
+            </div>
+            <div class="pay-actions"><button class="pay-btn" type="submit">Save Changes</button><button class="pay-btn secondary" type="button" id="cancelPaymentEdit">Cancel</button></div>
+        </form>
+    </section>
+</main>
+<script>
+(() => {
+    const editButton = document.getElementById("editPaymentDetails");
+    const cancelButton = document.getElementById("cancelPaymentEdit");
+    const form = document.getElementById("paymentDetailsForm");
+    if (!editButton || !cancelButton || !form) return;
+    editButton.addEventListener("click", () => {
+        form.hidden = false;
+        editButton.closest(".pay-current").hidden = true;
+        form.querySelector("input[name='upi_id']").focus();
+    });
+    cancelButton.addEventListener("click", () => {
+        form.hidden = true;
+        editButton.closest(".pay-current").hidden = false;
+    });
+})();
+</script>
+{% endblock %}
