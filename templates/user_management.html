@@ -18,7 +18,7 @@
         margin-bottom: 28px;
         border-radius: 20px;
         color: white;
-        background: linear-gradient(135deg, #2563eb, #4f46e5, #7c3aed);
+        background: linear-gradient(135deg, var(--hh-primary-dark), var(--hh-primary), #9b82ff);
         box-shadow: 0 12px 30px rgba(79, 70, 229, 0.20);
         animation: umSlideUp 0.5s ease-out;
     }
@@ -184,7 +184,7 @@
         gap: 7px;
         padding: 9px 13px;
         border-radius: 9px;
-        color: #4338ca;
+        color: var(--hh-primary-dark);
         background: #eef2ff;
         font-size: 12px;
         font-weight: 700;
@@ -259,13 +259,13 @@
     .um-search-btn {
         color: white;
         border: none;
-        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        background: linear-gradient(135deg, var(--hh-primary), #9b82ff);
         box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
     }
 
     .um-search-btn:hover {
         color: white;
-        background: linear-gradient(135deg, #1d4ed8, #4338ca);
+        background: linear-gradient(135deg, #1d4ed8, var(--hh-primary-dark));
         transform: translateY(-2px);
         box-shadow: 0 7px 15px rgba(79, 70, 229, 0.23);
     }
@@ -642,16 +642,17 @@
         {% endwith %}
 
         <section id="add-staff" style="margin:0 0 24px;padding:24px;border:1px solid #e3e8f3;border-radius:18px;background:#fff;box-shadow:0 7px 28px rgba(31,41,55,.055)">
-            <h2 style="margin:0 0 6px;color:#172033;font-size:20px">➕ Add Admin, Warden or Shopkeeper</h2>
+            <h2 style="margin:0 0 6px;color:#172033;font-size:20px">➕ Add Admin or Shopkeeper Account</h2>
             <p style="margin:0 0 18px;color:#64748b;font-size:13px">Create an active account. They can sign in using the matching login tab.</p>
+            <p style="margin:-8px 0 18px;color:#8a5a16;font-size:12px">Warden sign-in has been retired. Any existing Warden accounts remain listed for admin review.</p>
             <form method="POST" action="{{ url_for('admin_create_user') }}" autocomplete="off" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
                 <label style="display:grid;gap:6px;font-size:13px;font-weight:650">Full name<input name="full_name" maxlength="120" required autocomplete="name" placeholder="Enter full name" style="padding:11px 12px;border:1px solid #d5dceb;border-radius:9px;font:inherit"></label>
                 <label style="display:grid;gap:6px;font-size:13px;font-weight:650">Email<input name="email" type="email" required autocomplete="email" placeholder="name@example.com" style="padding:11px 12px;border:1px solid #d5dceb;border-radius:9px;font:inherit"></label>
                 <label style="display:grid;gap:6px;font-size:13px;font-weight:650">Phone (optional)<input name="phone" type="tel" maxlength="20" autocomplete="tel" placeholder="Phone number" style="padding:11px 12px;border:1px solid #d5dceb;border-radius:9px;font:inherit"></label>
-                <label style="display:grid;gap:6px;font-size:13px;font-weight:650">Account type<select name="role" required style="padding:11px 12px;border:1px solid #d5dceb;border-radius:9px;font:inherit"><option value="">Choose account type</option><option value="admin">Admin</option><option value="warden">Warden</option><option value="provider">Shopkeeper</option></select></label>
+                <label style="display:grid;gap:6px;font-size:13px;font-weight:650">Account type<select name="account_type" required style="padding:11px 12px;border:1px solid #d5dceb;border-radius:9px;font:inherit"><option value="">Choose account type</option><option value="admin">Admin</option><option value="products">Product Shopkeeper</option><option value="services">Service Provider</option></select></label>
                 <label style="display:grid;gap:6px;font-size:13px;font-weight:650">Password<input name="password" type="password" minlength="8" required autocomplete="new-password" placeholder="At least 8 characters" style="padding:11px 12px;border:1px solid #d5dceb;border-radius:9px;font:inherit"></label>
                 <label style="display:grid;gap:6px;font-size:13px;font-weight:650">Confirm password<input name="confirm_password" type="password" minlength="8" required autocomplete="new-password" placeholder="Re-enter password" style="padding:11px 12px;border:1px solid #d5dceb;border-radius:9px;font:inherit"></label>
-                <div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button class="um-search-btn" type="submit">Create account</button><span style="font-size:12px;color:#64748b">Shopkeeper uses the app's Provider role and can sign in using the Shopkeeper tab.</span></div>
+                <div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button class="um-search-btn" type="submit">Create account</button><span style="font-size:12px;color:#64748b">Each shopkeeper account gets one assigned workspace and can only access that dashboard.</span></div>
             </form>
         </section>
 
@@ -731,7 +732,7 @@
                                 <option value="" {% if not selected_role %}selected{% endif %}>All Roles</option>
                                 <option value="student" {% if selected_role == 'student' %}selected{% endif %}>🎓 Student</option>
                                 <option value="admin" {% if selected_role == 'admin' %}selected{% endif %}>🛡️ Admin</option>
-                                <option value="warden" {% if selected_role == 'warden' %}selected{% endif %}>🏢 Warden</option>
+                                <option value="warden" {% if selected_role == 'warden' %}selected{% endif %}>🏢 Warden (retired)</option>
                                 <option value="provider" {% if selected_role == 'provider' %}selected{% endif %}>🏪 Shopkeeper</option>
                             </select>
                         </div>
@@ -773,6 +774,7 @@
                             <th>Phone</th>
                             <th>Student ID</th>
                             <th>Role</th>
+                            <th>Workspace</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -835,8 +837,21 @@
                                     {% else %}
                                         👤
                                     {% endif %}
-                                    {{ 'Shopkeeper' if user.role == 'provider' else user.role|title }}
+                                    {{ 'Shopkeeper' if user.role == 'provider' else ('Warden (retired)' if user.role == 'warden' else user.role|title) }}
                                 </span>
+                            </td>
+
+                            <td>
+                                {% if user.role == 'provider' %}
+                                    <form method="POST" action="{{ url_for('admin_set_provider_type', user_id=user.id) }}" class="um-action-form">
+                                        <select name="provider_type" aria-label="Workspace for {{ user.full_name }}" style="max-width:175px;padding:8px;border:1px solid #d5dceb;border-radius:8px">
+                                            <option value="" disabled {{ 'selected' if user.provider_type not in ['products', 'services'] else '' }}>Assign workspace</option>
+                                            <option value="products" {{ 'selected' if user.provider_type == 'products' else '' }}>Product Shopkeeper</option>
+                                            <option value="services" {{ 'selected' if user.provider_type == 'services' else '' }}>Service Provider</option>
+                                        </select>
+                                        <button type="submit" class="um-action-btn um-btn-activate">Save workspace</button>
+                                    </form>
+                                {% else %}—{% endif %}
                             </td>
 
                             <td>
@@ -859,7 +874,7 @@
                                     <form
                                         method="POST"
                                         action="{{ url_for('toggle_user', user_id=user.id) }}"
-                                        class="um-action-form"onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if user.is_active else 'activate' }} this account?');"
+                                        class="um-action-form" onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if user.is_active else 'activate' }} this account?');"
                                     >
                                         <button
                                             type="submit"
@@ -873,6 +888,12 @@
                                         </button>
                                     </form>
 
+                                    {% if user.role in ['admin', 'provider'] %}
+                                    <form method="POST" action="{{ url_for('delete_staff_account', user_id=user.id) }}" class="um-action-form" onsubmit="return confirm('Permanently delete this {{ 'shopkeeper' if user.role == 'provider' else 'admin' }} account? This cannot be undone.');">
+                                        <button type="submit" class="um-action-btn um-btn-deactivate">🗑 Delete account</button>
+                                    </form>
+                                    {% endif %}
+
                                 {% else %}
                                     <span class="um-current-account">
                                         👤 Current Account
@@ -883,7 +904,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="8" class="um-empty">
+                            <td colspan="9" class="um-empty">
                                 <div class="um-empty-icon">🔎</div>
                                 <h5>No users found</h5>
                                 <p>Try a different search term or change the role filter.</p>

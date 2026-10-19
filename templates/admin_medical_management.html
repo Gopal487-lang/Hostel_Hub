@@ -9,10 +9,10 @@
         .wrap{max-width:1280px;margin:auto}.top,.row,.actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
         h1{margin:0 0 6px;font-size:28px}.muted{color:#788099}.top{margin-bottom:20px}.card{background:#fff;border:1px solid #e7eaf2;border-radius:15px;padding:20px;margin:16px 0;box-shadow:0 5px 20px #24314d08}
         .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}label{display:block;font-weight:650;margin-bottom:6px}input,select,textarea{width:100%;border:1px solid #d8ddea;border-radius:9px;padding:10px;background:#fff;color:inherit;font:inherit}textarea{min-height:76px;resize:vertical}.field.full{grid-column:1/-1}
-        .btn{display:inline-block;border:0;border-radius:9px;background:#6558f5;color:#fff;padding:10px 14px;text-decoration:none;font-weight:650;cursor:pointer}.btn.secondary{background:#e9eaf2;color:#33394d}.btn.good{background:#11835f}.btn.warn{background:#bb394b}
+        .btn{display:inline-block;border:0;border-radius:9px;background:var(--hh-primary);color:#fff;padding:10px 14px;text-decoration:none;font-weight:650;cursor:pointer}.btn.secondary{background:#e9eaf2;color:#33394d}.btn.good{background:#11835f}.btn.warn{background:#bb394b}
         .flash{padding:12px 14px;border-radius:9px;margin:10px 0;background:#e9f7ef;color:#176342}.flash.error{background:#ffeded;color:#9e2732}
         .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:740px}th,td{text-align:left;padding:11px;border-bottom:1px solid #edf0f5;vertical-align:top}th{font-size:11px;color:#646d81;text-transform:uppercase}td form{margin:0}.section-title{margin:0 0 14px;font-size:19px}
-        @media(max-width:600px){body{padding:12px}.card{padding:15px}h1{font-size:23px}}
+        @media(max-width:600px){body{padding:12px}.card{padding:15px}h1{font-size:23px}.table-wrap{overflow:visible}table.phone-card-table{width:100%;min-width:0;border-collapse:separate;border-spacing:0}table.phone-card-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}table.phone-card-table,table.phone-card-table tbody,table.phone-card-table tr,table.phone-card-table td{display:block;width:100%;min-width:0}table.phone-card-table tr{margin:0 0 12px;padding:7px 12px;border:1px solid #e7eaf2;border-radius:12px;background:#fff}table.phone-card-table td{display:grid;grid-template-columns:minmax(90px,34%) minmax(0,1fr);gap:9px;padding:9px 0;overflow-wrap:anywhere}table.phone-card-table td:before{content:attr(data-label);font-size:10px;font-weight:800;color:#646d81;text-transform:uppercase}table.phone-card-table td[colspan]{display:block}table.phone-card-table td[colspan]:before{content:none}}
     </style>
 </head>
 <body><main class="wrap">
@@ -82,8 +82,8 @@
     </section>
 
     <section class="card" id="appointments"><h2 class="section-title">📅 Student Appointment Requests</h2>
-        <div class="table-wrap"><table><thead><tr><th>Student</th><th>Doctor / Clinic</th><th>Requested time</th><th>Reason</th><th>Status &amp; notes</th><th>Update</th></tr></thead><tbody>
-        {% for appointment in appointments %}<tr><td>{{ appointment.student_name }}<div class="muted">{{ appointment.student_phone or '' }}</div></td><td>{{ appointment.doctor_name }}<div class="muted">{{ appointment.clinic_name or '' }}</div></td><td>{{ appointment.preferred_at }}</td><td>{{ appointment.reason or '—' }}</td><td>{{ appointment.status }}{% if appointment.admin_notes %}<div class="muted">{{ appointment.admin_notes }}</div>{% endif %}</td><td><form method="post"><input type="hidden" name="action" value="appointment_status"><input type="hidden" name="appointment_id" value="{{ appointment.id }}"><select name="status"><option {{ 'selected' if appointment.status == 'Pending' }}>Pending</option><option {{ 'selected' if appointment.status == 'Confirmed' }}>Confirmed</option><option {{ 'selected' if appointment.status == 'Completed' }}>Completed</option><option {{ 'selected' if appointment.status == 'Cancelled' }}>Cancelled</option></select><input name="admin_notes" maxlength="500" placeholder="Reply / notes" value="{{ appointment.admin_notes or '' }}" style="margin:6px 0"><button class="btn" type="submit">Save</button></form></td></tr>
+        <div class="table-wrap"><table><thead><tr><th>Student</th><th>Doctor / Clinic</th><th>Doctor's scheduled time</th><th>Reason</th><th>Status &amp; notes</th><th>Update</th></tr></thead><tbody>
+        {% for appointment in appointments %}<tr><td>{{ appointment.student_name }}<div class="muted">{{ appointment.student_phone or '' }}</div></td><td>{{ appointment.doctor_name }}<div class="muted">{{ appointment.clinic_name or 'Clinic details to be advised' }}</div></td><td>{{ (appointment.confirmed_at or appointment.preferred_at).replace('T', ' ') if appointment.confirmed_at or appointment.preferred_at != 'Awaiting doctor schedule' else 'Not scheduled yet' }}</td><td>{{ appointment.reason or '—' }}</td><td>{{ appointment.status }}{% if appointment.admin_notes %}<div class="muted">{{ appointment.admin_notes }}</div>{% endif %}</td><td><form method="post"><input type="hidden" name="action" value="appointment_status"><input type="hidden" name="appointment_id" value="{{ appointment.id }}"><label>Appointment date &amp; time</label><input type="datetime-local" name="confirmed_at" value="{{ appointment.confirmed_at or '' }}" style="margin:6px 0"><select name="status"><option {{ 'selected' if appointment.status == 'Pending' }}>Pending</option><option {{ 'selected' if appointment.status == 'Confirmed' }}>Confirmed</option><option {{ 'selected' if appointment.status == 'Completed' }}>Completed</option><option {{ 'selected' if appointment.status == 'Cancelled' }}>Cancelled</option></select><input name="admin_notes" maxlength="500" placeholder="Doctor / clinic note" value="{{ appointment.admin_notes or '' }}" style="margin:6px 0"><button class="btn" type="submit">Save appointment</button></form></td></tr>
         {% else %}<tr><td colspan="6" class="muted">No appointment requests yet.</td></tr>{% endfor %}</tbody></table></div>
     </section>
 </main>
@@ -104,6 +104,20 @@ medicineImageInput?.addEventListener("change", function () {
     medicineImagePreviewUrl = URL.createObjectURL(file);
     medicineImagePreview.src = medicineImagePreviewUrl;
     medicineImagePreview.hidden = false;
+});
+</script>
+<script>
+document.querySelectorAll('table').forEach(function (table) {
+    const headings = Array.from(table.querySelectorAll('thead th')).map(function (cell) {
+        return cell.textContent.trim().replace(/\s+/g, ' ');
+    });
+    if (headings.length < 4) return;
+    table.classList.add('phone-card-table');
+    table.querySelectorAll('tbody tr').forEach(function (row) {
+        Array.from(row.cells).forEach(function (cell, index) {
+            if (!cell.hasAttribute('colspan') && headings[index]) cell.dataset.label = headings[index];
+        });
+    });
 });
 </script>
 </body></html>

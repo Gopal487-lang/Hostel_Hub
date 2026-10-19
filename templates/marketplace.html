@@ -17,7 +17,7 @@
         padding: 38px;
         margin-bottom: 30px;
         border-radius: 24px;
-        background: linear-gradient(125deg, #173b8f, #6754db 65%, #9476f5);
+        background: linear-gradient(125deg, #20243a, var(--hh-primary) 65%, #9b82ff);
         color: #fff;
     }
 
@@ -237,7 +237,7 @@
     }
 
     .marketplace-product-name a:hover {
-        color: #6754db;
+        color: var(--hh-primary);
     }
 
     .marketplace-shop {
@@ -248,12 +248,19 @@
 
     .marketplace-product-bottom {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
         margin-top: auto;
         padding-top: 13px;
         border-top: 1px solid var(--border-color, #edf0f5);
+    }
+
+    .marketplace-price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
     }
 
     .marketplace-price {
@@ -273,7 +280,8 @@
         align-items: center;
         justify-content: center;
         gap: 7px;
-        padding: 11px 13px;
+        min-height: 46px;
+        padding: 10px 12px;
         border: 1px solid #e0a32e;
         border-radius: 10px;
         background: #fff8e7;
@@ -291,7 +299,8 @@
         align-items: center;
         justify-content: center;
         gap: 7px;
-        padding: 11px 13px;
+        min-height: 46px;
+        padding: 10px 12px;
         border: none;
         border-radius: 10px;
         background: #5b4bdb;
@@ -311,18 +320,18 @@
         align-items: center;
         justify-content: center;
         gap: 6px;
-        padding: 10px 12px;
-        border: 1px solid #dcd8ff;
+        padding: 8px 11px;
+        border: 1px solid #e4defb;
         border-radius: 10px;
-        background: #f5f3ff;
-        color: #5946cb;
+        background: #f7f4ff;
+        color: #654bc9;
         font-size: 12px;
         font-weight: 700;
         text-decoration: none;
         white-space: nowrap;
     }
 
-    .marketplace-view-product:hover { background: #eeeaff; }
+    .marketplace-view-product:hover { background: #eee9ff; border-color:#cfc3ff; color:#5038b3; }
 
     .marketplace-empty {
         grid-column: 1 / -1;
@@ -355,7 +364,7 @@
     }
 
     .marketplace-back:hover {
-        color: #6754db;
+        color: var(--hh-primary);
     }
 
     @keyframes marketCardIn {
@@ -408,19 +417,19 @@
             padding: 12px;
         }
 
-        .marketplace-product-bottom {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
         .marketplace-actions {
             width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
 
         .marketplace-actions .marketplace-add-cart,
         .marketplace-actions .marketplace-buy-now {
-            flex: 1;
-            width: 50%;
+            width: 100%;
+            min-width: 0;
+            padding-inline: 7px;
+            font-size: 11px;
         }
 
         .marketplace-price {
@@ -440,6 +449,13 @@
         .marketplace-product-image {
             height: 210px;
         }
+    }
+    @media (max-width: 520px) {
+        .marketplace-grid { grid-template-columns: 1fr; gap: 15px; }
+        .marketplace-product-image { height: 210px; }
+        .marketplace-product-info { padding: 16px; }
+        .marketplace-actions .marketplace-add-cart,
+        .marketplace-actions .marketplace-buy-now { min-height: 49px; font-size: 12px; }
     }
 .marketplace-product-sizes{margin:9px 0;color:#6b6482;font-size:12px;line-height:1.5}.marketplace-product-sizes>strong{display:block;color:#423a61;margin-bottom:6px}.marketplace-size-options{display:flex;flex-wrap:wrap;gap:6px}.marketplace-size-option{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border:1px solid #d6e8df;border-radius:8px;background:#effaf3;color:#146c43;font-size:11px;font-weight:700}.marketplace-size-option small{font-size:9px;font-weight:600}.marketplace-size-option.is-out-of-stock{border-color:#f0d4d7;background:#fff3f3;color:#a9444d}.marketplace-size-option.is-out-of-stock small{color:#a9444d}</style>
 {% endblock %}
@@ -555,13 +571,15 @@
                 </p>
 
                 <div class="marketplace-product-bottom">
+                  <div class="marketplace-price-row">
                     <span class="marketplace-price">
                         ₹{{ "%.2f"|format(product['price']|float) }}
                     </span>
 
             <a class="marketplace-view-product" href="{{ url_for('product_details', product_id=product['id']) }}">
-                <i class="fa-solid fa-eye"></i> View
+                See details <span aria-hidden="true">↗</span>
             </a>
+                  </div>
 
                     <div class="marketplace-actions">
                         <button

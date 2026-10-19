@@ -8,15 +8,25 @@
     <title>{{ page_title }} | HostelHub</title>
 
     <style>
+        :root {
+            --hh-primary: #7357e8;
+            --hh-primary-dark: #5c43c8;
+            --hh-ink: #292744;
+            --hh-muted: #77758f;
+            --hh-border: #e8e4f5;
+            --hh-surface: #ffffff;
+            --hh-soft: #f7f5ff;
+        }
+
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            padding: 30px 16px;
-            background: #f4f6fc;
-            color: #20243a;
+            padding: 38px 18px;
+            background: radial-gradient(ellipse at top left, #eee9ff 0, #f8f7fc 45%, #f2f6ff 100%);
+            color: var(--hh-ink);
             font-family: "Segoe UI", Arial, sans-serif;
         }
 
@@ -26,23 +36,35 @@
         }
 
         .card {
-            background: #fff;
-            border: 1px solid #eceef5;
-            border-radius: 18px;
-            padding: 30px;
-            box-shadow: 0 12px 35px rgba(37, 40, 75, 0.06);
+            position: relative;
+            overflow: hidden;
+            background: var(--hh-surface);
+            border: 1px solid rgba(115, 87, 232, 0.12);
+            border-radius: 22px;
+            padding: 34px;
+            box-shadow: 0 22px 60px rgba(65, 52, 125, 0.11);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 5px;
+            background: linear-gradient(90deg, #7357e8, #9b7cf5, #69b9e8);
         }
 
         h1 {
-            margin: 0 0 8px;
-            font-size: 26px;
+            margin: 0 0 9px;
+            color: var(--hh-ink);
+            font-size: clamp(23px, 4vw, 29px);
+            letter-spacing: -0.6px;
         }
 
         .subtitle {
-            color: #858ba3;
+            color: var(--hh-muted);
             font-size: 13px;
             line-height: 1.6;
-            margin-bottom: 28px;
+            margin: 0 0 28px;
         }
 
         .grid {
@@ -65,6 +87,7 @@
             margin-bottom: 9px;
             font-size: 13px;
             font-weight: 700;
+            color: #44415f;
         }
 
         .required {
@@ -78,21 +101,40 @@
             width: 100%;
             min-width: 0;
             padding: 13px 14px;
-            border: 1px solid #e2e5f0;
-            border-radius: 10px;
-            background: #fff;
-            color: #20243a;
+            border: 1px solid var(--hh-border);
+            border-radius: 12px;
+            background: #f5f2ff;
+            color: var(--hh-ink);
             font: inherit;
             font-size: 14px;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        input:hover,
+        textarea:hover,
+        select:hover {
+            border-color: #c9bdf7;
+            background: #f0ebff;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #aaa7bb;
         }
 
         input:focus,
         textarea:focus,
         select:focus {
-            border-color: #6558f5;
+            border-color: var(--hh-primary);
+            background: #eee8ff;
             box-shadow: 0 0 0 3px rgba(101, 88, 245, 0.10);
+        }
+
+        input[readonly],
+        input:disabled,
+        select:disabled {
+            background: #eeeaf8;
         }
 
         input:disabled,
@@ -111,15 +153,16 @@
         .hint {
             display: block;
             margin-top: 7px;
-            color: #858ba3;
+            color: var(--hh-muted);
             font-size: 12px;
             line-height: 1.6;
         }
 
         .flash {
             padding: 13px 15px;
-            border-radius: 10px;
-            background: #fff0f0;
+            border: 1px solid #f2cbd1;
+            border-radius: 12px;
+            background: #fff5f6;
             color: #b73548;
             font-size: 13px;
             line-height: 1.6;
@@ -127,11 +170,13 @@
         }
 
         .flash.success {
+            border-color: #c9ecd7;
             background: #eafaf0;
             color: #187443;
         }
 
         .flash.warning {
+            border-color: #f3dfae;
             background: #fff7e6;
             color: #925d08;
         }
@@ -141,15 +186,15 @@
         .image-upload-box {
             margin-top: 8px;
             padding: 18px;
-            border: 2px dashed #cbd5e1;
-            border-radius: 14px;
-            background: #f8fafc;
+            border: 2px dashed #cfc5f5;
+            border-radius: 16px;
+            background: var(--hh-soft);
             transition: border-color 0.2s, background 0.2s;
         }
 
         .image-upload-box:hover {
-            border-color: #6558f5;
-            background: #f7f6ff;
+            border-color: var(--hh-primary);
+            background: #f1edff;
         }
 
         .file-input {
@@ -176,12 +221,12 @@
         }
 
         .upload-label strong {
-            color: #4338ca;
+            color: var(--hh-primary-dark);
             font-size: 15px;
         }
 
         .upload-label span:last-child {
-            color: #64748b;
+            color: var(--hh-muted);
             font-size: 12px;
         }
 
@@ -197,8 +242,8 @@
             aspect-ratio: 1 / 1;
             object-fit: contain;
             padding: 8px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border: 1px solid var(--hh-border);
+            border-radius: 14px;
             background: white;
         }
 
@@ -216,7 +261,9 @@
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
-            margin-top: 5px;
+            margin-top: 10px;
+            padding-top: 20px;
+            border-top: 1px solid #f0edf7;
         }
 
         .btn {
@@ -226,25 +273,28 @@
             min-height: 43px;
             padding: 12px 20px;
             border: 0;
-            border-radius: 10px;
-            background: #6558f5;
+            border-radius: 12px;
+            background: var(--hh-primary);
             color: white;
             text-decoration: none;
             cursor: pointer;
             font-family: inherit;
             font-size: 13px;
             font-weight: 700;
-            transition: background 0.2s, transform 0.2s;
+            box-shadow: 0 7px 16px rgba(92, 67, 200, 0.18);
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
         }
 
         .btn:hover {
-            background: #5043db;
+            background: var(--hh-primary-dark);
             transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(92, 67, 200, 0.25);
         }
 
         .btn-light {
-            background: #eeecff;
-            color: #5141dc;
+            background: #f0edff;
+            color: var(--hh-primary-dark);
+            box-shadow: none;
         }
 
         .btn-light:hover {
@@ -257,8 +307,8 @@
             }
 
             .card {
-                padding: 21px 17px;
-                border-radius: 14px;
+                padding: 26px 18px 20px;
+                border-radius: 17px;
             }
 
             h1 {

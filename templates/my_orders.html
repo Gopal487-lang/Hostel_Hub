@@ -245,7 +245,7 @@
 }
 
 .tracking-heading span {
-    color: #4f46e5;
+    color: var(--hh-primary);
     font-size: 13px;
     font-weight: 700;
 }
@@ -310,14 +310,14 @@
 }
 
 .tracking-step.is-current .tracking-dot {
-    border-color: #4f46e5;
+    border-color: var(--hh-primary);
     box-shadow: 0 0 0 4px #e0e7ff;
-    color: #4f46e5;
+    color: var(--hh-primary);
 }
 
 .tracking-step.is-confirmed .tracking-dot {
-    border-color: #2563eb;
-    background: #2563eb;
+    border-color: var(--hh-primary);
+    background: var(--hh-primary);
     box-shadow: 0 0 0 4px #dbeafe;
     color: #fff;
 }
@@ -390,7 +390,7 @@
     display: inline-block;
     margin-top: 15px;
     padding: 12px 22px;
-    background: #4f46e5;
+    background: var(--hh-primary);
     color: #fff;
     text-decoration: none;
     border-radius: 10px;
@@ -454,7 +454,7 @@
     }
 }
 
-.payment-state{display:inline-block;padding:5px 10px;border-radius:999px;font-size:13px;font-weight:750}.payment-verified{background:#dbeafe;color:#1d4ed8}.payment-waiting{background:#fef3c7;color:#92400e}.payment-rejected{background:#fee2e2;color:#991b1b}.payment-due{background:#e0e7ff;color:#3730a3}.waiting-button{background:#b7791f!important}.order-pay-action{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:13px 0 4px}.order-pay-button{display:inline-block;border:0;border-radius:9px;padding:11px 16px;background:#4f46e5;color:#fff;text-decoration:none;font-weight:700;cursor:pointer}.order-pay-button:hover{background:#4338ca}.order-pay-button:disabled{background:#94a3b8;cursor:not-allowed}.order-pay-action small{color:#64748b;font-size:12px}
+.payment-state{display:inline-block;padding:5px 10px;border-radius:999px;font-size:13px;font-weight:750}.payment-verified{background:#dbeafe;color:#1d4ed8}.payment-waiting{background:#fef3c7;color:#92400e}.payment-rejected{background:#fee2e2;color:#991b1b}.payment-due{background:#e0e7ff;color:#3730a3}.waiting-button{background:#b7791f!important}.order-pay-action{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:13px 0 4px}.order-pay-button{display:inline-block;border:0;border-radius:9px;padding:11px 16px;background:var(--hh-primary);color:#fff;text-decoration:none;font-weight:700;cursor:pointer}.order-pay-button:hover{background:var(--hh-primary-dark)}.order-pay-button:disabled{background:#94a3b8;cursor:not-allowed}.order-pay-action small{color:#64748b;font-size:12px}
 </style>
 <script>
 document.querySelectorAll("[data-payment-setup-missing]").forEach(button => {

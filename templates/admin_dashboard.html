@@ -7,14 +7,14 @@
     <title>Admin Dashboard | HostelHub</title>
     <style>
         :root {
-            --primary: #6558f5;
+            --primary: var(--hh-primary);
             --primary-light: #eeecff;
             --bg: #f5f6fc;
             --card: #ffffff;
             --text: #20243a;
             --muted: #858ba3;
             --border: #eceef5;
-            --sidebar: #171b35;
+            --sidebar: #f1efff;
             --green: #16a878;
             --orange: #f29b38;
             --red: #e45166;
@@ -38,7 +38,7 @@
             inset: 0 auto 0 0;
             width: 255px;
             background: var(--sidebar);
-            color: white;
+            color: #292843;
             padding: 25px 17px;
             overflow-y: auto;
             z-index: 100;
@@ -60,14 +60,14 @@
             display: grid;
             place-items: center;
             border-radius: 14px;
-            background: linear-gradient(135deg, #8175ff, #5141dc);
+            background: linear-gradient(135deg, #8175ff, var(--hh-primary-dark));
         }
 
         .brand small {
             display: block;
             font-size: 10px;
             letter-spacing: 2px;
-            color: #a8afd0;
+            color: #777b96;
             margin-top: 4px;
         }
 
@@ -75,7 +75,7 @@
             margin: 18px 11px 10px;
             font-size: 10px;
             letter-spacing: 1.7px;
-            color: #8188ad;
+            color: #777b96;
             font-weight: 800;
         }
 
@@ -85,7 +85,7 @@
             gap: 13px;
             padding: 12px 13px;
             margin: 4px 0;
-            color: #c6cbe0;
+            color: #656a84;
             text-decoration: none;
             border-radius: 11px;
             font-size: 13px;
@@ -93,8 +93,8 @@
         }
 
         .nav-link:hover, .nav-link.active {
-            color: white;
-            background: linear-gradient(100deg, #6558f5, #7769ff);
+            color: var(--hh-primary-dark);
+            background: linear-gradient(100deg, #e8e3ff, #f8f7ff);
             transform: translateX(3px);
         }
 
@@ -107,9 +107,9 @@
         .sidebar-footer {
             margin: 35px 4px 0;
             padding: 17px;
-            border: 1px solid #343957;
+            border: 1px solid #e2dcff;
             border-radius: 14px;
-            color: #b9bfd9;
+            color: #656a84;
             font-size: 12px;
             line-height: 1.6;
         }
@@ -124,8 +124,16 @@
             align-items: center;
             justify-content: space-between;
             gap: 15px;
-            margin-bottom: 30px;
+            min-width: 0;
+            padding: 12px 15px;
+            margin: 0 0 24px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(255,255,255,.92);
+            box-shadow: 0 6px 20px #25284b08;
         }
+
+        .heading { min-width: 0; }
 
         .heading h1 {
             font-size: 25px;
@@ -143,6 +151,8 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            margin-left: auto;
+            flex: 0 0 auto;
         }
 
         .icon-btn, .menu-btn {
@@ -154,6 +164,9 @@
             cursor: pointer;
         }
 
+        .icon-btn { color: var(--hh-primary-dark); font-size: 20px; transition: .2s; }
+        .icon-btn:hover { background: var(--primary-light); border-color: #d9d4ff; transform: translateY(-1px); }
+
         .admin-profile {
             display: flex;
             align-items: center;
@@ -162,6 +175,7 @@
             padding: 7px 13px 7px 7px;
             border-radius: 13px;
             border: 1px solid var(--border);
+            max-width: 260px;
         }
 
         .avatar {
@@ -175,7 +189,8 @@
             font-weight: 800;
         }
 
-        .admin-profile strong { font-size: 12px; }
+        .admin-profile .profile-text { min-width: 0; }
+        .admin-profile strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
         .admin-profile small { display: block; color: var(--muted); margin-top: 3px; }
         .menu-btn { display: none; }
 
@@ -191,7 +206,7 @@
             overflow: hidden;
             position: relative;
             margin-bottom: 25px;
-            box-shadow: 0 12px 30px #6558f522;
+            box-shadow: 0 12px 30px var(--hh-primary)22;
         }
 
         .welcome h2 { margin: 0 0 10px; font-size: 23px; }
@@ -224,6 +239,10 @@
             animation: appear .5s ease both;
         }
 
+        .stat-card-link { display: block; min-width: 0; color: inherit; text-decoration: none; }
+        .stat-card-link:focus-visible { outline: 3px solid #8b7cf0; outline-offset: 3px; border-radius: 16px; }
+        .stat-card-link .stat-card { height: 100%; }
+
         .stat-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 12px 30px #25284b0c;
@@ -245,7 +264,7 @@
             font-size: 19px;
         }
 
-        .purple { color: #6558f5; background: #eeecff; }
+        .purple { color: var(--hh-primary); background: #eeecff; }
         .green { color: #16a878; background: #e3f8f0; }
         .orange { color: #e99427; background: #fff2df; }
         .blue { color: #3986e8; background: #e7f1ff; }
@@ -278,7 +297,7 @@
         .manage-card:hover {
             border-color: #bdb6ff;
             transform: translateY(-4px);
-            box-shadow: 0 12px 25px #5141dc0c;
+            box-shadow: 0 12px 25px var(--hh-primary-dark)0c;
         }
 
         .manage-card .stat-icon { margin-bottom: 13px; }
@@ -378,15 +397,21 @@
             .sidebar.open { transform: translateX(0); }
             .main { margin-left: 0; padding: 22px 18px; }
             .menu-btn { display: block; }
-            .topbar { justify-content: flex-start; }
+            .topbar { justify-content: flex-start; gap: 12px; }
             .top-actions { margin-left: auto; }
             .welcome-symbol { display: none; }
         }
 
         @media (max-width: 600px) {
-            .main { padding: 18px 13px 35px; }
+            .main { padding: 13px 10px 35px; }
+            .topbar { gap: 9px; padding: 10px; margin-bottom: 18px; border-radius: 14px; }
+            .menu-btn, .icon-btn { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px; }
+            .heading { flex: 1 1 auto; }
             .heading h1 { font-size: 20px; }
             .heading p { font-size: 11px; }
+            .top-actions { gap: 7px; }
+            .admin-profile { padding: 4px; border-radius: 11px; }
+            .avatar { width: 30px; height: 30px; border-radius: 9px; }
             .admin-profile .profile-text { display: none; }
             .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
             .stat-card { padding: 14px; }
@@ -397,6 +422,15 @@
             .welcome h2 { font-size: 19px; }
             .welcome p { font-size: 12px; }
             .table-head { padding: 16px; }
+            .table-wrap { overflow: visible; }
+            table.phone-card-table, table.phone-card-table tbody, table.phone-card-table tr, table.phone-card-table td { display:block; width:100%; min-width:0; }
+            table.phone-card-table { table-layout:fixed; border-collapse:separate; border-spacing:0; }
+            table.phone-card-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+            table.phone-card-table tbody tr { margin:0 0 12px; padding:7px 12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; }
+            table.phone-card-table tbody td { display:grid; grid-template-columns:minmax(90px,34%) minmax(0,1fr); gap:9px; padding:9px 0; overflow-wrap:anywhere; }
+            table.phone-card-table tbody td:before { content:attr(data-label); color:#73758d; font-size:10px; font-weight:800; text-transform:uppercase; }
+            table.phone-card-table tbody td[colspan] { display:block; }
+            table.phone-card-table tbody td[colspan]:before { content:none; }
         }
     </style>
 </head>
@@ -418,6 +452,10 @@
     <span class="nav-icon">📦</span> Product Management
 </a>
 
+<a href="{{ url_for('admin_services_dashboard') }}" class="nav-link">
+    <span class="nav-icon">🛠️</span> Services Dashboard
+</a>
+
 <a href="{{ url_for('admin_medical_management') }}" class="nav-link">
     <span class="nav-icon">🏥</span> Medical Management
 </a>
@@ -434,27 +472,16 @@
     <span class="nav-icon">🛒</span> Order Management
 </a>
 
+<a href="{{ url_for('admin_app_updates') }}" class="nav-link">
+    <span class="nav-icon">🆕</span> App Updates
+</a>
+
 
 
         <div class="nav-label">CAMPUS MANAGEMENT</div>
         
 
         <!-- CAMPUS MANAGEMENT -->
-
-<a href="{{ url_for('admin_services') }}" class="nav-link">
-    <span class="nav-icon">🛠️</span>
-    Services
-</a>
-
-<a href="{{ url_for('admin_rooms') }}" class="nav-link">
-    <span class="nav-icon">🏨</span>
-    Hostel Rooms
-</a>
-
-<a href="{{ url_for('admin_mess') }}" class="nav-link">
-    <span class="nav-icon">🍽️</span>
-    Mess Management
-</a>
 
 <a href="{{ url_for('admin_complaints') }}" class="nav-link">
     <span class="nav-icon">📢</span>
@@ -531,26 +558,26 @@
         </div>
 
         <section class="stats">
-            <article class="stat-card">
+            <a class="stat-card-link" href="{{ url_for('admin_users') }}"><article class="stat-card">
                 <div class="stat-top"><span class="muted">Students</span><span class="stat-icon purple">👥</span></div>
-                <h3>{{ total_students|default(0) }}</h3><p>Registered students</p>
-            </article>
-            <article class="stat-card">
+                <h3>{{ total_students|default(0) }}</h3><p>Registered students · Open User Management →</p>
+            </article></a>
+            <a class="stat-card-link" href="{{ url_for('admin_shops') }}"><article class="stat-card">
                 <div class="stat-top"><span class="muted">Shops</span><span class="stat-icon green">🏪</span></div>
-                <h3>{{ total_shops|default(0) }}</h3><p>Registered shops</p>
-            </article>
-            <article class="stat-card">
+                <h3>{{ total_shops|default(0) }}</h3><p>Registered shops · Open Shop Management →</p>
+            </article></a>
+            <a class="stat-card-link" href="{{ url_for('admin_products') }}"><article class="stat-card">
                 <div class="stat-top"><span class="muted">Products</span><span class="stat-icon orange">📦</span></div>
-                <h3>{{ total_products|default(0) }}</h3><p>Products in catalogue</p>
-            </article>
-            <article class="stat-card">
+                <h3>{{ total_products|default(0) }}</h3><p>Products in catalogue · Open Product Management →</p>
+            </article></a>
+            <a class="stat-card-link" href="{{ url_for('admin_orders') }}"><article class="stat-card">
                 <div class="stat-top"><span class="muted">Orders</span><span class="stat-icon blue">🛒</span></div>
-                <h3>{{ total_orders|default(0) }}</h3><p>Total orders placed</p>
-            </article>
-            <article class="stat-card">
+                <h3>{{ total_orders|default(0) }}</h3><p>Total orders · Open Order Management →</p>
+            </article></a>
+            <a class="stat-card-link" href="{{ url_for('admin_complaints') }}"><article class="stat-card">
                 <div class="stat-top"><span class="muted">Complaints</span><span class="stat-icon pink">📢</span></div>
-                <h3>{{ pending_complaints|default(0) }}</h3><p>Pending complaints</p>
-            </article>
+                <h3>{{ pending_complaints|default(0) }}</h3><p>Pending complaints · Open Complaints →</p>
+            </article></a>
         </section>
 
         <section id="products">
@@ -579,7 +606,7 @@
                 <a href="{{ url_for('admin_users') }}" class="manage-card">
                     <div class="stat-icon blue">👥</div>
                     <h3>User Management</h3>
-                    <p>View and manage student, warden and provider accounts.</p>
+                    <p>View and manage student, admin and shopkeeper accounts.</p>
                 </a>
                 <a href="{{ url_for('admin_orders') }}" class="manage-card">
                     <div class="stat-icon orange">🛒</div>
@@ -592,7 +619,8 @@
         <section id="services">
             <div class="section-title"><div><h2>Campus Services</h2><p>Keep everyday hostel services organised</p></div></div>
             <div class="management-grid">
-                <a href="{{ url_for('admin_services') }}" class="manage-card"><div class="stat-icon purple">🛠️</div><h3>Service Management</h3><p>Laundry, printing, mobile repair and other services.</p></a>
+                <a href="{{ url_for('admin_services_dashboard') }}" class="manage-card"><div class="stat-icon purple">🛠️</div><h3>Services Dashboard</h3><p>View services, providers, estimates and student requests together.</p></a>
+                <a href="{{ url_for('admin_services') }}" class="manage-card"><div class="stat-icon purple">🧺</div><h3>Service Management</h3><p>Add services, assign providers and manage service item rates.</p></a>
                 <a href="{{ url_for('admin_rooms') }}" class="manage-card"><div class="stat-icon green">🏨</div><h3>Hostel Rooms</h3><p>Room availability and room records.</p></a>
                 <a href="{{ url_for('admin_mess') }}" class="manage-card"><div class="stat-icon orange">🍽️</div><h3>Mess Management</h3><p>Manage the mess menu and related information.</p></a>
                 <a href="{{ url_for('admin_complaints') }}" class="manage-card"><div class="stat-icon pink">📢</div><h3>Complaints</h3><p>Review and follow up on student complaints.</p></a>
@@ -657,6 +685,20 @@
             }
         });
     });
+</script>
+<script>
+document.querySelectorAll('table').forEach(function (table) {
+    const headings = Array.from(table.querySelectorAll('thead th')).map(function (cell) {
+        return cell.textContent.trim().replace(/\s+/g, ' ');
+    });
+    if (headings.length < 4) return;
+    table.classList.add('phone-card-table');
+    table.querySelectorAll('tbody tr').forEach(function (row) {
+        Array.from(row.cells).forEach(function (cell, index) {
+            if (!cell.hasAttribute('colspan') && headings[index]) cell.dataset.label = headings[index];
+        });
+    });
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,19 @@
+{% extends "provider_shell.html" %}
+{% block provider_content %}
+<section class="ps-form-panel">
+  <header class="ps-form-head"><div><span class="sk-eyebrow">{{ 'EDIT SERVICE' if service else 'NEW SERVICE' }}</span><h2>{{ 'Edit service details' if service else 'Add a service' }}</h2><p>Set what you offer, how long it takes, and your item-wise rates. Students will see the estimate before requesting.</p></div><a class="sk-button secondary" href="{{ url_for('provider_services') }}">← My Services</a></header>
+  <form method="post" class="ps-form">
+    <label>Service name *<input name="name" maxlength="120" required value="{{ service.name if service else '' }}" placeholder="e.g. Laundry and ironing"></label>
+    <label>Service category *<select name="category_id" required><option value="">Choose a category</option>{% for category in categories %}<option value="{{ category.id }}" {{ 'selected' if service and service.category_id == category.id else '' }}>{{ category.name }}</option>{% endfor %}</select></label>
+    <label>Base price (₹) *<input name="price" type="number" min="0" step="0.01" required value="{{ service.price if service else '' }}" placeholder="0.00"></label>
+    <label>Estimated time (minutes) *<input name="estimated_minutes" type="number" min="1" max="1440" required value="{{ service.estimated_minutes if service else 30 }}"></label>
+    <label class="ps-full">Description<textarea name="description" maxlength="1000" rows="3" placeholder="Describe what's included and any useful instructions">{{ service.description if service else '' }}</textarea></label>
+    <label class="ps-full">Item rates (one per line: item name = rupees)<textarea name="pricing_options" rows="7" placeholder="Shirt / T-shirt = 15&#10;Shorts = 12&#10;Blazer = 70">{{ service.pricing_editor_text if service else '' }}</textarea><small>Use this list for item-specific prices. If left empty, suggested category rates are used when available.</small></label>
+    <div class="ps-full ps-form-actions"><button class="sk-button" type="submit">{{ 'Save service changes' if service else 'Add service' }}</button><a class="sk-button secondary" href="{{ url_for('provider_services') }}">Cancel</a></div>
+  </form>
+</section>
+<style>
+.ps-form-panel{max-width:920px;margin:0 auto;padding:23px;background:#fff;border:1px solid #e7e9f1;border-radius:17px;box-shadow:0 8px 26px #28264b08}.ps-form-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:21px}.ps-form-head h2{margin:6px 0;font-size:23px;color:#282943}.ps-form-head p{margin:0;color:#75798f;font-size:12px;line-height:1.6}.ps-form-head .secondary,.ps-form-actions .secondary{background:#fff;color:#5a46c1;border:1px solid #dedafa;box-shadow:none}.ps-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.ps-form label{display:grid;gap:7px;color:#393a52;font-weight:700;font-size:12px}.ps-form input,.ps-form select,.ps-form textarea{width:100%;padding:11px 12px;border:1px solid #dfe2ed;border-radius:10px;background:#fff;color:#25263e;font:inherit;font-weight:400;outline:none}.ps-form input:focus,.ps-form select:focus,.ps-form textarea:focus{border-color:#8b79e6;box-shadow:0 0 0 3px #7864df18}.ps-form textarea{resize:vertical}.ps-form label small{color:#7b7f94;font-weight:400;font-size:10px;line-height:1.5}.ps-full{grid-column:1/-1}.ps-form-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:3px}
+@media(max-width:620px){.ps-form-panel{padding:17px}.ps-form-head{flex-direction:column}.ps-form{grid-template-columns:1fr}.ps-full{grid-column:auto}.ps-form-actions>*{flex:1}}
+</style>
+{% endblock %}

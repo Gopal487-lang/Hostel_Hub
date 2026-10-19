@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import secrets
+import json
 from pathlib import Path
 from functools import wraps
 import csv
@@ -244,6 +245,18 @@ def get_db():
             remote_connection = turso_serverless.connect(turso_url, auth_token=turso_token)
             g.db = _RemoteConnection(remote_connection)
         else:
+            # Render's default filesystem is ephemeral. Refuse to silently
+            # create a fresh, empty SQLite database there after a restart or
+            # spin-down; use Turso or explicitly configure a mounted disk.
+            if (
+                os.environ.get("RENDER_SERVICE_ID")
+                and not os.environ.get("DATABASE_PATH")
+            ):
+                raise RuntimeError(
+                    "No persistent database is configured for this Render service. "
+                    "Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN, or set DATABASE_PATH "
+                    "to a database file under an attached persistent disk."
+                )
             g.db = sqlite3.connect(
                 app.config["DATABASE"],
                 timeout=30
@@ -334,10 +347,10 @@ def init_db():
                     role IN (
                         'student',
                         'admin',
-                        'warden',
                         'provider'
                     )
                 ),
+            provider_type TEXT CHECK (provider_type IN ('products', 'services')),
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
@@ -387,6 +400,27 @@ def init_db():
                 REFERENCES shops(id)
         );
 
+        CREATE TABLE IF NOT EXISTS product_update_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            provider_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT,
+            price REAL NOT NULL DEFAULT 0,
+            image_url TEXT,
+            sizes TEXT NOT NULL DEFAULT '',
+            out_of_stock_sizes TEXT NOT NULL DEFAULT '',
+            stock_quantity INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at TEXT,
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+            FOREIGN KEY (provider_id) REFERENCES users(id)
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_one_pending_product_update
+            ON product_update_requests(product_id) WHERE status = 'pending';
+
         CREATE TABLE IF NOT EXISTS medical_shops (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -426,7 +460,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id INTEGER NOT NULL,
             doctor_id INTEGER NOT NULL,
-            preferred_at TEXT NOT NULL,
+            preferred_at TEXT NOT NULL DEFAULT 'Awaiting doctor schedule',
+            confirmed_at TEXT,
             reason TEXT,
             status TEXT NOT NULL DEFAULT 'Pending',
             admin_notes TEXT,
@@ -466,6 +501,7 @@ def init_db():
             provider_id INTEGER,
             shop_id INTEGER,
             price REAL NOT NULL DEFAULT 0,
+            pricing_options TEXT NOT NULL DEFAULT '[]',
             image_url TEXT,
             estimated_minutes INTEGER NOT NULL DEFAULT 30,
             is_available INTEGER NOT NULL DEFAULT 1,
@@ -487,6 +523,7 @@ def init_db():
             student_id INTEGER NOT NULL,
             preferred_at TEXT,
             details TEXT NOT NULL,
+            estimated_cost REAL NOT NULL DEFAULT 0,
             status TEXT NOT NULL DEFAULT 'Pending',
             admin_notes TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -639,6 +676,21 @@ def init_db():
             "ALTER TABLE users ADD COLUMN student_id TEXT"
         )
 
+    if "provider_type" not in user_columns:
+        db.execute("ALTER TABLE users ADD COLUMN provider_type TEXT")
+    db.execute("""
+        UPDATE users
+        SET provider_type = 'products'
+        WHERE role = 'provider' AND provider_type IS NULL
+          AND EXISTS (SELECT 1 FROM shops WHERE shops.provider_id = users.id)
+    """)
+    db.execute("""
+        UPDATE users
+        SET provider_type = 'services'
+        WHERE role = 'provider' AND provider_type IS NULL
+          AND EXISTS (SELECT 1 FROM services WHERE services.provider_id = users.id)
+    """)
+
     # Categories table migration
 
     shop_columns = {
@@ -789,6 +841,28 @@ def init_db():
             ADD COLUMN estimated_minutes INTEGER NOT NULL DEFAULT 30
         """)
 
+    if "pricing_options" not in service_columns:
+        db.execute("""
+            ALTER TABLE services
+            ADD COLUMN pricing_options TEXT NOT NULL DEFAULT '[]'
+        """)
+
+    service_booking_columns = {
+        row["name"]
+        for row in db.execute("PRAGMA table_info(service_bookings)").fetchall()
+    }
+    if "estimated_cost" not in service_booking_columns:
+        db.execute("""
+            ALTER TABLE service_bookings
+            ADD COLUMN estimated_cost REAL NOT NULL DEFAULT 0
+        """)
+
+    appointment_columns = {
+        row["name"] for row in db.execute("PRAGMA table_info(medical_appointments)").fetchall()
+    }
+    if "confirmed_at" not in appointment_columns:
+        db.execute("ALTER TABLE medical_appointments ADD COLUMN confirmed_at TEXT")
+
     
     # -----------------------------------------------------
     # DEFAULT PRODUCT CATEGORIES
@@ -845,6 +919,7 @@ def init_db():
             "Discover other nearby services",
             "✨"
         )
+
     ]
 
     db.executemany("""
@@ -1036,6 +1111,20 @@ def init_db():
         )
     """)
 
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS app_updates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            version TEXT NOT NULL DEFAULT '',
+            body TEXT NOT NULL,
+            audience TEXT NOT NULL DEFAULT 'all',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_by INTEGER,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+    """)
+
     # Store room allocation records separately.
     db.execute("""
         CREATE TABLE IF NOT EXISTS room_allocations (
@@ -1089,6 +1178,32 @@ def role_required(*allowed_roles):
 
         return wrapped_view
 
+    return decorator
+
+
+def provider_mode_required(required_mode):
+    def decorator(view_function):
+        @wraps(view_function)
+        def wrapped_view(*args, **kwargs):
+            if not session.get("user_id"):
+                flash("Please log in first.", "error")
+                return redirect(url_for("login"))
+            if session.get("user_role") != "provider":
+                flash("You are not authorized to access this page.", "error")
+                return redirect(url_for("dashboard"))
+            provider = get_db().execute(
+                "SELECT provider_type FROM users WHERE id = ? AND role = 'provider'",
+                (session["user_id"],),
+            ).fetchone()
+            current_mode = provider["provider_type"] if provider else None
+            session["provider_mode"] = current_mode
+            if current_mode not in {"products", "services"}:
+                return redirect(url_for("provider_workspace_pending"))
+            if current_mode != required_mode:
+                flash("That page is not available for your selected shopkeeper workspace.", "error")
+                return redirect(url_for("provider_dashboard"))
+            return view_function(*args, **kwargs)
+        return wrapped_view
     return decorator
 
 
@@ -1327,7 +1442,6 @@ def login():
 
         allowed_tabs = {
             "user": ["student"],
-            "warden": ["warden"],
             "admin": ["admin"],
             "shopkeeper": ["provider"]
         }
@@ -1359,6 +1473,7 @@ def login():
                 email,
                 password_hash,
                 role,
+                provider_type,
                 is_active
             FROM users
             WHERE email = ?
@@ -1400,6 +1515,8 @@ def login():
         session["user_id"] = user["id"]
         session["user_name"] = user["full_name"]
         session["user_role"] = user["role"]
+        if user["role"] == "provider":
+            session["provider_mode"] = user["provider_type"]
 
         flash(
             f"Welcome back, {user['full_name']}!",
@@ -1425,9 +1542,19 @@ def dashboard():
         return redirect(url_for("admin_dashboard"))
 
     if role == "warden":
-        return redirect(url_for("warden_dashboard"))
+        session.clear()
+        flash("Warden access has been removed. Sign in with an active Student, Admin or Shopkeeper account.", "error")
+        return redirect(url_for("login"))
 
     if role == "provider":
+        provider = get_db().execute(
+            "SELECT provider_type FROM users WHERE id = ? AND role = 'provider'",
+            (session["user_id"],),
+        ).fetchone()
+        mode = provider["provider_type"] if provider else None
+        session["provider_mode"] = mode
+        if mode not in {"products", "services"}:
+            return redirect(url_for("provider_workspace_pending"))
         return redirect(url_for("provider_dashboard"))
 
     return redirect(url_for("student_dashboard"))
@@ -1494,6 +1621,68 @@ def admin_dashboard():
         recent_orders=recent_orders
     )
 
+
+@app.route("/admin/app-updates", methods=["GET", "POST"])
+@role_required("admin")
+def admin_app_updates():
+    db = get_db()
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        version = request.form.get("version", "").strip()[:40]
+        body = request.form.get("body", "").strip()
+        audience = request.form.get("audience", "all").strip().lower()
+        if audience not in {"all", "students", "shopkeepers"}:
+            audience = "all"
+        if not title or not body:
+            flash("Enter an update title and message.", "danger")
+        else:
+            try:
+                db.execute("""
+                    INSERT INTO app_updates (title, version, body, audience, created_by)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (title, version, body, audience, session["user_id"]))
+                db.commit()
+                flash("App update published.", "success")
+                return redirect(url_for("admin_app_updates"))
+            except sqlite3.Error:
+                db.rollback()
+                app.logger.exception("Publishing application update failed")
+                flash("Could not publish the update.", "danger")
+
+    updates = db.execute("""
+        SELECT a.*, u.full_name AS admin_name
+        FROM app_updates a
+        LEFT JOIN users u ON u.id = a.created_by
+        ORDER BY a.id DESC
+    """).fetchall()
+    return render_template("admin_module.html", module="app_updates",
+        title="App Updates & Announcements", app_updates=updates)
+
+
+@app.route("/admin/app-updates/<int:update_id>/toggle", methods=["POST"])
+@role_required("admin")
+def toggle_app_update(update_id):
+    db = get_db()
+    update = db.execute("SELECT id, is_active FROM app_updates WHERE id = ?", (update_id,)).fetchone()
+    if not update:
+        flash("App update not found.", "warning")
+    else:
+        db.execute("UPDATE app_updates SET is_active = ? WHERE id = ?",
+                   (0 if update["is_active"] else 1, update_id))
+        db.commit()
+        flash("App update visibility changed.", "success")
+    return redirect(url_for("admin_app_updates"))
+
+
+@app.route("/admin/app-updates/<int:update_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_app_update(update_id):
+    db = get_db()
+    db.execute("DELETE FROM app_updates WHERE id = ?", (update_id,))
+    db.commit()
+    flash("App update deleted.", "success")
+    return redirect(url_for("admin_app_updates"))
+
 # =========================================================
 # HOSTELHUB ADMIN MODULES
 # =========================================================
@@ -1526,6 +1715,134 @@ COMPLAINT_PRIORITIES = [
 # ADMIN SERVICES
 # ---------------------------------------------------------
 
+SERVICE_DEFAULT_RATES = {
+    "laundry": [
+        {"name": "Shirt / T-shirt", "price": 15, "unit": "piece"},
+        {"name": "Trousers", "price": 20, "unit": "piece"},
+        {"name": "Shorts / short pants", "price": 12, "unit": "piece"},
+        {"name": "Blazer / coat", "price": 70, "unit": "piece"},
+        {"name": "Bedsheet", "price": 35, "unit": "piece"},
+        {"name": "Blanket", "price": 100, "unit": "piece"},
+    ],
+    "printing": [
+        {"name": "B&W print (A4)", "price": 2, "unit": "page"},
+        {"name": "Color print (A4)", "price": 10, "unit": "page"},
+        {"name": "B&W photocopy", "price": 1, "unit": "page"},
+        {"name": "Scanning", "price": 5, "unit": "page"},
+        {"name": "Lamination (A4)", "price": 25, "unit": "sheet"},
+    ],
+    "electronics-mobile-repair": [
+        {"name": "Diagnosis / inspection", "price": 50, "unit": "service"},
+        {"name": "Software / setup help", "price": 100, "unit": "service"},
+        {"name": "Charging port repair", "price": 250, "unit": "service"},
+        {"name": "Battery replacement labor", "price": 300, "unit": "service"},
+        {"name": "Screen repair labor", "price": 500, "unit": "service"},
+    ],
+    "clothing-tailoring": [
+        {"name": "Shorts / trouser hemming", "price": 60, "unit": "piece"},
+        {"name": "Shirt alteration", "price": 100, "unit": "piece"},
+        {"name": "Blazer alteration", "price": 250, "unit": "piece"},
+        {"name": "Zip / button repair", "price": 40, "unit": "item"},
+        {"name": "Basic stitching", "price": 300, "unit": "item"},
+    ],
+}
+
+
+def parse_service_rate_lines(text):
+    """Parse admin-entered one-per-line service rates: Option name = rupees."""
+    options = []
+    seen = set()
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if "=" not in line:
+            raise ValueError("Each rate line must use Option name = price.")
+        name, raw_price = (part.strip() for part in line.rsplit("=", 1))
+        if not name or len(name) > 80 or name.casefold() in seen:
+            raise ValueError("Rate option names must be unique and under 80 characters.")
+        try:
+            unit_price = float(raw_price)
+        except ValueError as error:
+            raise ValueError("Every rate must be a valid amount.") from error
+        if unit_price < 0 or unit_price > 100000:
+            raise ValueError("Rates must be between ₹0 and ₹100,000.")
+        options.append({"name": name, "price": round(unit_price, 2), "unit": "unit"})
+        seen.add(name.casefold())
+        if len(options) > 30:
+            raise ValueError("A service can have at most 30 rate options.")
+    return options
+
+
+def service_rate_options(service_row):
+    try:
+        options = json.loads(service_row["pricing_options"] or "[]")
+        if isinstance(options, list) and options:
+            return options
+    except (TypeError, ValueError, KeyError):
+        pass
+    return SERVICE_DEFAULT_RATES.get(service_row["category_slug"], [])
+
+@app.route("/admin/services/dashboard")
+@role_required("admin")
+def admin_services_dashboard():
+    db = get_db()
+    stats = {
+        "services": db.execute("SELECT COUNT(*) FROM services").fetchone()[0],
+        "available": db.execute(
+            "SELECT COUNT(*) FROM services WHERE is_available = 1"
+        ).fetchone()[0],
+        "bookings": db.execute("SELECT COUNT(*) FROM service_bookings").fetchone()[0],
+        "pending": db.execute(
+            "SELECT COUNT(*) FROM service_bookings WHERE status = 'Pending'"
+        ).fetchone()[0],
+    }
+    service_rows = db.execute("""
+        SELECT sv.id, sv.name, sv.price, sv.estimated_minutes, sv.is_available,
+               c.name AS category_name, c.slug AS category_slug,
+               u.full_name AS provider_name, sv.pricing_options
+        FROM services AS sv
+        LEFT JOIN categories AS c ON c.id = sv.category_id
+        LEFT JOIN users AS u ON u.id = sv.provider_id
+        ORDER BY sv.is_available DESC, sv.name COLLATE NOCASE
+    """).fetchall()
+    services = []
+    for row in service_rows:
+        item = dict(row)
+        item["rates"] = service_rate_options(row)
+        services.append(item)
+    providers = db.execute("""
+        SELECT u.id, u.full_name, u.email, u.is_active,
+               COUNT(DISTINCT sv.id) AS service_count,
+               COUNT(DISTINCT b.id) AS booking_count
+        FROM users AS u
+        LEFT JOIN services AS sv ON sv.provider_id = u.id
+        LEFT JOIN service_bookings AS b ON b.service_id = sv.id
+        WHERE u.role = 'provider'
+        GROUP BY u.id
+        ORDER BY u.is_active DESC, u.full_name COLLATE NOCASE
+    """).fetchall()
+    bookings = db.execute("""
+        SELECT b.id, b.status, b.estimated_cost, b.preferred_at, b.details,
+               b.created_at, sv.name AS service_name,
+               student.full_name AS student_name,
+               provider.full_name AS provider_name
+        FROM service_bookings AS b
+        JOIN services AS sv ON sv.id = b.service_id
+        JOIN users AS student ON student.id = b.student_id
+        LEFT JOIN users AS provider ON provider.id = sv.provider_id
+        ORDER BY b.id DESC
+        LIMIT 12
+    """).fetchall()
+    return render_template(
+        "admin_services_dashboard.html",
+        stats=stats,
+        services=services,
+        providers=providers,
+        bookings=bookings,
+    )
+
+
 @app.route("/admin/services", methods=["GET", "POST"])
 @role_required("admin")
 def admin_services():
@@ -1538,6 +1855,7 @@ def admin_services():
         shop_id = request.form.get("shop_id", "").strip()
         provider_id = request.form.get("provider_id", "").strip()
         price = request.form.get("price", "0").strip()
+        pricing_text = request.form.get("pricing_options", "")
         estimated_minutes = request.form.get(
             "estimated_minutes", "30"
         ).strip()
@@ -1556,6 +1874,12 @@ def admin_services():
             flash("Enter a valid price and estimated time.", "error")
             return redirect(url_for("admin_services"))
 
+        try:
+            pricing_options = parse_service_rate_lines(pricing_text)
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("admin_services"))
+
         category_id = int(category_id) if category_id.isdigit() else None
         shop_id = int(shop_id) if shop_id.isdigit() else None
         provider_id = int(provider_id) if provider_id.isdigit() else None
@@ -1570,28 +1894,37 @@ def admin_services():
         db.execute("""
             INSERT INTO services (
                 name, description, category_id, provider_id, shop_id,
-                price, estimated_minutes, is_available
+                price, estimated_minutes, is_available, pricing_options
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
         """, (
             name, description, category_id, provider_id, shop_id,
-            price, estimated_minutes
+            price, estimated_minutes, json.dumps(pricing_options, ensure_ascii=False)
         ))
 
         db.commit()
         flash("Service added successfully.", "success")
         return redirect(url_for("admin_services"))
 
-    services = db.execute("""
+    service_rows = db.execute("""
         SELECT
             sv.*,
             c.name AS category_name,
+            c.slug AS category_slug,
             s.name AS shop_name
         FROM services sv
         LEFT JOIN categories c ON c.id = sv.category_id
         LEFT JOIN shops s ON s.id = sv.shop_id
         ORDER BY sv.id DESC
     """).fetchall()
+    services = []
+    for row in service_rows:
+        item = dict(row)
+        item["pricing_editor_text"] = "\n".join(
+            f"{option['name']} = {option['price']}"
+            for option in service_rate_options(row)
+        )
+        services.append(item)
 
     categories = db.execute("""
         SELECT id, name
@@ -1631,6 +1964,31 @@ def admin_services():
         providers=providers,
         service_bookings=service_bookings
     )
+
+
+@app.route("/admin/services/<int:service_id>/pricing", methods=["POST"])
+@role_required("admin")
+def update_service_pricing(service_id):
+    db = get_db()
+    service = db.execute("SELECT id FROM services WHERE id = ?", (service_id,)).fetchone()
+    if service is None:
+        flash("Service not found.", "error")
+        return redirect(url_for("admin_services"))
+    try:
+        options = parse_service_rate_lines(request.form.get("pricing_options", ""))
+        db.execute(
+            "UPDATE services SET pricing_options = ? WHERE id = ?",
+            (json.dumps(options, ensure_ascii=False), service_id),
+        )
+        db.commit()
+        flash("Service price list updated.", "success")
+    except ValueError as error:
+        flash(str(error), "error")
+    except sqlite3.Error:
+        db.rollback()
+        app.logger.exception("Service pricing update failed for service %s", service_id)
+        flash("Could not update the service price list.", "error")
+    return redirect(url_for("admin_services"))
 
 
 @app.route("/admin/service-bookings/<int:booking_id>/update", methods=["POST"])
@@ -2805,390 +3163,59 @@ def export_orders():
 
 
 # =========================================================
-# WARDEN DASHBOARD
-# =========================================================
-
-@app.route("/warden/dashboard")
-@app.route("/warden/dashboard/<page>")
-@role_required("warden")
-def warden_dashboard(page="overview"):
-
-    valid_pages = {"overview", "complaints", "rooms", "students", "mess", "notices"}
-    if page not in valid_pages:
-        abort(404)
-    requested_service = request.args.get("service", "").strip()
-
-    db = get_db()
-
-    total_rooms = db.execute("""
-        SELECT COUNT(*) AS total
-        FROM rooms
-    """).fetchone()["total"]
-
-    available_rooms = db.execute("""
-        SELECT COUNT(*) AS total
-        FROM rooms
-        WHERE status = 'Available'
-          AND occupied < capacity
-    """).fetchone()["total"]
-
-    total_students = db.execute("""
-        SELECT COUNT(*) AS total
-        FROM users
-        WHERE role = 'student'
-    """).fetchone()["total"]
-
-    pending_complaints = db.execute("""
-        SELECT COUNT(*) AS total
-        FROM complaints
-        WHERE status = 'Pending'
-    """).fetchone()["total"]
-
-    urgent_requests = db.execute("""
-        SELECT COUNT(*) AS total
-        FROM complaints
-        WHERE priority = 'Urgent' AND status NOT IN ('Resolved', 'Rejected')
-    """).fetchone()["total"]
-
-    complaints = db.execute("""
-        SELECT
-            c.id,
-            c.subject,
-            c.description,
-            c.status,
-            c.priority,
-            c.category,
-            c.warden_reply,
-            c.created_at,
-            u.full_name AS student_name,
-            u.phone AS student_phone,
-            (SELECT r.room_number FROM room_allocations ra
-             JOIN rooms r ON r.id = ra.room_id
-             WHERE ra.student_id = u.id AND ra.status = 'Active'
-             ORDER BY ra.id DESC LIMIT 1) AS student_room
-        FROM complaints AS c
-        JOIN users AS u
-            ON u.id = c.student_id
-        ORDER BY CASE c.status WHEN 'Pending' THEN 0 WHEN 'In Progress' THEN 1 ELSE 2 END,
-                 c.id DESC
-    """).fetchall()
-
-    rooms = db.execute("""
-        SELECT r.*,
-               (SELECT COUNT(*) FROM room_allocations ra
-                WHERE ra.room_id = r.id AND ra.status = 'Active') AS assigned_students
-        FROM rooms AS r
-        ORDER BY r.room_number
-    """).fetchall()
-    students = db.execute("""
-        SELECT u.id, u.full_name, u.email, u.phone, u.student_id,
-               (SELECT r.room_number FROM room_allocations ra
-                JOIN rooms r ON r.id = ra.room_id
-                WHERE ra.student_id = u.id AND ra.status = 'Active'
-                ORDER BY ra.id DESC LIMIT 1) AS room_number,
-               (SELECT r.id FROM room_allocations ra
-                JOIN rooms r ON r.id = ra.room_id
-                WHERE ra.student_id = u.id AND ra.status = 'Active'
-                ORDER BY ra.id DESC LIMIT 1) AS room_id
-        FROM users u
-        WHERE u.role = 'student'
-        ORDER BY u.full_name
-    """).fetchall()
-    assignable_rooms = db.execute("""
-        SELECT id, room_number, capacity, occupied
-        FROM rooms
-        WHERE occupied < capacity
-        ORDER BY room_number
-    """).fetchall()
-    notices = db.execute("""
-        SELECT n.*, u.full_name AS author_name
-        FROM hostel_notices n
-        LEFT JOIN users u ON u.id = n.created_by
-        WHERE n.is_active = 1
-        ORDER BY n.id DESC
-    """).fetchall()
-    today = date.today()
-    week_start = today - timedelta(days=today.weekday())
-    week_end = week_start + timedelta(days=6)
-    menu_columns = {row["name"] for row in db.execute("PRAGMA table_info(mess_menus)").fetchall()}
-    menu_value_column = "menu_items" if "menu_items" in menu_columns else "items"
-    mess_rows = db.execute(f"""
-        SELECT menu_date, meal_type, {menu_value_column} AS meal_items
-        FROM mess_menus
-        WHERE menu_date BETWEEN ? AND ?
-        ORDER BY menu_date, meal_type
-    """, (week_start.isoformat(), week_end.isoformat())).fetchall()
-    mess_menu = {(row["menu_date"], row["meal_type"]): row["meal_items"] for row in mess_rows}
-
-    return render_template(
-        "warden_dashboard.html",
-        active_page=page,
-        requested_service=requested_service,
-        total_rooms=total_rooms,
-        available_rooms=available_rooms,
-        total_students=total_students,
-        pending_complaints=pending_complaints,
-        urgent_requests=urgent_requests,
-        complaints=complaints,
-        complaint_priorities=COMPLAINT_PRIORITIES,
-        rooms=rooms,
-        students=students,
-        notices=notices,
-        complaint_statuses=COMPLAINT_STATUSES,
-        assignable_rooms=assignable_rooms,
-        mess_menu=mess_menu,
-        week_start=week_start,
-        week_end=week_end,
-        week_dates=[week_start + timedelta(days=i) for i in range(7)],
-        meals=WEEKLY_MEALS
-    )
-
-
-@app.route("/warden/students/<int:student_id>")
-@role_required("warden")
-def warden_student_detail(student_id):
-    db = get_db()
-    student = db.execute(
-        "SELECT id, full_name, email, phone, student_id, created_at FROM users WHERE id = ? AND role = 'student'",
-        (student_id,)
-    ).fetchone()
-    if student is None:
-        abort(404)
-
-    current_room = db.execute("""
-        SELECT r.id, r.room_number, r.room_type, r.floor, r.capacity, r.occupied
-        FROM room_allocations ra
-        JOIN rooms r ON r.id = ra.room_id
-        WHERE ra.student_id = ? AND ra.status = 'Active'
-        ORDER BY ra.id DESC LIMIT 1
-    """, (student_id,)).fetchone()
-    student_complaints = db.execute("""
-        SELECT id, subject, description, status, category, warden_reply, created_at
-        FROM complaints
-        WHERE student_id = ?
-        ORDER BY id DESC
-    """, (student_id,)).fetchall()
-    assignable_rooms = db.execute("""
-        SELECT id, room_number, capacity, occupied
-        FROM rooms
-        WHERE occupied < capacity
-        ORDER BY room_number
-    """).fetchall()
-
-    return render_template(
-        "warden_dashboard.html",
-        active_page="student_detail",
-        student=student,
-        current_room=current_room,
-        student_complaints=student_complaints,
-        assignable_rooms=assignable_rooms,
-        requested_service="",
-        complaint_statuses=COMPLAINT_STATUSES,
-        complaint_priorities=COMPLAINT_PRIORITIES,
-        complaints=[],
-        rooms=[],
-        students=[],
-        notices=[],
-        total_rooms=0,
-        available_rooms=0,
-        total_students=0,
-        pending_complaints=0,
-        urgent_requests=0,
-        mess_menu={},
-        week_start=date.today(),
-        week_end=date.today(),
-        week_dates=[],
-        meals=WEEKLY_MEALS
-    )
-
-
-@app.route("/warden/complaints/<int:complaint_id>/update", methods=["POST"])
-@role_required("warden")
-def warden_update_complaint(complaint_id):
-    status = request.form.get("status", "").strip()
-    priority = request.form.get("priority", "Medium").strip()
-    reply = request.form.get("warden_reply", "").strip()[:2000]
-    if status not in COMPLAINT_STATUSES or priority not in COMPLAINT_PRIORITIES:
-        flash("Choose a valid request status and priority.", "error")
-        return redirect(url_for("warden_dashboard", page="complaints"))
-    db = get_db()
-    updated = db.execute("UPDATE complaints SET status = ?, priority = ?, warden_reply = ? WHERE id = ?",
-                         (status, priority, reply or None, complaint_id))
-    db.commit()
-    flash("Request updated." if updated.rowcount else "Request not found.",
-          "success" if updated.rowcount else "error")
-    return redirect(url_for("warden_dashboard", page="complaints"))
-
-
-@app.route("/warden/rooms/add", methods=["POST"])
-@role_required("warden")
-def warden_add_room():
-    room_number = request.form.get("room_number", "").strip()
-    room_type = request.form.get("room_type", "Standard").strip() or "Standard"
-    floor = request.form.get("floor", "").strip() or None
-    try:
-        capacity = int(request.form.get("capacity", ""))
-        if not room_number or len(room_number) > 30 or capacity < 1 or capacity > 100:
-            raise ValueError
-    except ValueError:
-        flash("Enter a room number (up to 30 characters) and a capacity from 1 to 100 beds.", "error")
-        return redirect(url_for("warden_dashboard", page="rooms"))
-
-    db = get_db()
-    try:
-        db.execute("""
-            INSERT INTO rooms (room_number, capacity, occupied, status, room_type, floor)
-            VALUES (?, ?, 0, 'Available', ?, ?)
-        """, (room_number, capacity, room_type, floor))
-        db.commit()
-        flash(f"Room {room_number} added successfully.", "success")
-    except sqlite3.IntegrityError:
-        db.rollback()
-        flash("That room number already exists. Use a unique room number.", "error")
-    except sqlite3.Error:
-        db.rollback()
-        app.logger.exception("Warden room creation failed")
-        flash("Could not add the room. Please try again.", "error")
-    return redirect(url_for("warden_dashboard", page="rooms"))
-
-
-@app.route("/warden/mess/update", methods=["POST"])
-@role_required("warden")
-def warden_update_mess():
-    today = date.today()
-    week_start = today - timedelta(days=today.weekday())
-    week_dates = [week_start + timedelta(days=offset) for offset in range(7)]
-    db = get_db()
-    columns = {row["name"] for row in db.execute("PRAGMA table_info(mess_menus)").fetchall()}
-    value_column = "menu_items" if "menu_items" in columns else "items"
-
-    try:
-        updates = []
-        for day in week_dates:
-            menu_date = day.isoformat()
-            for meal in WEEKLY_MEALS:
-                items = request.form.get(f"{menu_date}_{meal}", "").strip()
-                if len(items) > 500:
-                    raise ValueError("Each meal menu must be 500 characters or fewer.")
-                updates.append((menu_date, meal, items))
-
-        for menu_date, meal, items in updates:
-            existing = db.execute(
-                "SELECT id FROM mess_menus WHERE menu_date = ? AND meal_type = ?",
-                (menu_date, meal)
-            ).fetchone()
-            if existing:
-                db.execute(
-                    f"UPDATE mess_menus SET {value_column} = ? WHERE menu_date = ? AND meal_type = ?",
-                    (items, menu_date, meal)
-                )
-            elif items:
-                db.execute(
-                    f"INSERT INTO mess_menus (meal_type, menu_date, {value_column}) VALUES (?, ?, ?)",
-                    (meal, menu_date, items)
-                )
-        db.commit()
-        flash("Mess schedule updated. Students can now see the latest menu.", "success")
-    except ValueError as error:
-        db.rollback()
-        flash(str(error), "error")
-    except sqlite3.Error:
-        db.rollback()
-        app.logger.exception("Warden mess schedule update failed")
-        flash("Could not update the mess schedule. Please try again.", "error")
-    return redirect(url_for("warden_dashboard", page="mess"))
-
-
-@app.route("/warden/rooms/allocate", methods=["POST"])
-@role_required("warden")
-def warden_allocate_room():
-    db = get_db()
-    try:
-        student_id = int(request.form.get("student_id", ""))
-        room_id = int(request.form.get("room_id", ""))
-        student = db.execute("SELECT id FROM users WHERE id = ? AND role = 'student'", (student_id,)).fetchone()
-        room = db.execute("SELECT id, room_number, capacity, occupied FROM rooms WHERE id = ?", (room_id,)).fetchone()
-        if student is None or room is None:
-            raise ValueError("Choose a valid student and room.")
-        current = db.execute("""
-            SELECT ra.id, ra.room_id FROM room_allocations ra
-            WHERE ra.student_id = ? AND ra.status = 'Active'
-            ORDER BY ra.id DESC LIMIT 1
-        """, (student_id,)).fetchone()
-        if current and current["room_id"] == room_id:
-            flash("This student is already assigned to that room.", "info")
-            return redirect(url_for("warden_dashboard", page="students"))
-        if room["occupied"] >= room["capacity"]:
-            raise ValueError("That room has no beds available.")
-        if current:
-            db.execute("UPDATE room_allocations SET status = 'Released' WHERE id = ?", (current["id"],))
-            db.execute("UPDATE rooms SET occupied = MAX(occupied - 1, 0), status = CASE WHEN occupied - 1 >= capacity THEN 'Full' ELSE 'Available' END WHERE id = ?", (current["room_id"],))
-        db.execute("INSERT INTO room_allocations (room_id, student_id) VALUES (?, ?)", (room_id, student_id))
-        db.execute("UPDATE rooms SET occupied = occupied + 1, status = CASE WHEN occupied + 1 >= capacity THEN 'Full' ELSE 'Available' END WHERE id = ?", (room_id,))
-        db.commit()
-        flash(f"Student assigned to room {room['room_number']}.", "success")
-    except (TypeError, ValueError) as error:
-        db.rollback()
-        flash(str(error) or "Choose a valid student and room.", "error")
-    except sqlite3.Error:
-        db.rollback()
-        app.logger.exception("Warden room assignment failed")
-        flash("Could not save the room assignment.", "error")
-    return redirect(url_for("warden_dashboard", page="students"))
-
-
-@app.route("/warden/rooms/release/<int:student_id>", methods=["POST"])
-@role_required("warden")
-def warden_release_room(student_id):
-    db = get_db()
-    allocation = db.execute("""
-        SELECT ra.id, ra.room_id, r.room_number
-        FROM room_allocations ra JOIN rooms r ON r.id = ra.room_id
-        WHERE ra.student_id = ? AND ra.status = 'Active'
-        ORDER BY ra.id DESC LIMIT 1
-    """, (student_id,)).fetchone()
-    if allocation:
-        db.execute("UPDATE room_allocations SET status = 'Released' WHERE id = ?", (allocation["id"],))
-        db.execute("UPDATE rooms SET occupied = MAX(occupied - 1, 0), status = CASE WHEN occupied - 1 >= capacity THEN 'Full' ELSE 'Available' END WHERE id = ?", (allocation["room_id"],))
-        db.commit()
-        flash(f"Room {allocation['room_number']} released for the student.", "success")
-    else:
-        flash("This student has no active room assignment.", "error")
-    return redirect(url_for("warden_dashboard", page="students"))
-
-
-@app.route("/warden/notices", methods=["POST"])
-@role_required("warden")
-def warden_create_notice():
-    title = request.form.get("title", "").strip()
-    body = request.form.get("body", "").strip()
-    if not title or not body or len(title) > 120 or len(body) > 2000:
-        flash("Notice title and message are required (maximum 120 and 2000 characters).", "error")
-        return redirect(url_for("warden_dashboard", page="notices"))
-    db = get_db()
-    db.execute("INSERT INTO hostel_notices (title, body, created_by) VALUES (?, ?, ?)",
-               (title, body, session["user_id"]))
-    db.commit()
-    flash("Notice published for students.", "success")
-    return redirect(url_for("warden_dashboard", page="notices"))
-
-
-@app.route("/warden/notices/<int:notice_id>/delete", methods=["POST"])
-@role_required("warden")
-def warden_delete_notice(notice_id):
-    db = get_db()
-    db.execute("UPDATE hostel_notices SET is_active = 0 WHERE id = ?", (notice_id,))
-    db.commit()
-    flash("Notice removed.", "success")
-    return redirect(url_for("warden_dashboard", page="notices"))
-
-
-# =========================================================
 # PROVIDER DASHBOARD
 # =========================================================
 
-@app.route("/provider/services/<int:service_id>/toggle", methods=["POST"])
+PROVIDER_SERVICE_CATEGORY_SLUGS = {
+    "laundry", "printing", "electronics-mobile-repair", "clothing-tailoring",
+    "food-snacks", "other-services",
+}
+
+
+def get_provider_service_categories(db):
+    placeholders = ", ".join("?" for _ in PROVIDER_SERVICE_CATEGORY_SLUGS)
+    return db.execute(f"""
+        SELECT id, name, slug FROM categories
+        WHERE is_active = 1 AND slug IN ({placeholders})
+        ORDER BY name
+    """, tuple(sorted(PROVIDER_SERVICE_CATEGORY_SLUGS))).fetchall()
+
+
+def validate_provider_service_form(db):
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+    category_id = request.form.get("category_id", "").strip()
+    price_text = request.form.get("price", "").strip()
+    minutes_text = request.form.get("estimated_minutes", "30").strip()
+    if not name or not category_id.isdigit():
+        raise ValueError("Service name and category are required.")
+    try:
+        price = float(price_text)
+        estimated_minutes = int(minutes_text)
+        if price < 0 or estimated_minutes < 1 or estimated_minutes > 1440:
+            raise ValueError
+    except (ValueError, TypeError):
+        raise ValueError("Enter a valid base price and duration (1–1440 minutes).")
+    categories = get_provider_service_categories(db)
+    category = next((item for item in categories if item["id"] == int(category_id)), None)
+    if category is None:
+        raise ValueError("Choose a valid service category.")
+    rates = parse_service_rate_lines(request.form.get("pricing_options", ""))
+    if not rates:
+        rates = SERVICE_DEFAULT_RATES.get(category["slug"], [])
+    if not rates:
+        raise ValueError("Add at least one item and price in the rate list.")
+    return (name, description, int(category_id), price, estimated_minutes,
+            json.dumps(rates, ensure_ascii=False))
+
+
+@app.route("/provider/workspace-pending")
 @role_required("provider")
+def provider_workspace_pending():
+    return render_template("provider_workspace_pending.html")
+
+@app.route("/provider/services/<int:service_id>/toggle", methods=["POST"])
+@provider_mode_required("services")
 def toggle_provider_service(service_id):
     db = get_db()
     service = db.execute("""
@@ -3213,8 +3240,54 @@ def toggle_provider_service(service_id):
 @app.route("/provider/dashboard")
 @role_required("provider")
 def provider_dashboard():
-
     db = get_db()
+    provider = db.execute(
+        "SELECT provider_type FROM users WHERE id = ? AND role = 'provider'",
+        (session["user_id"],),
+    ).fetchone()
+    provider_mode = provider["provider_type"] if provider else None
+    session["provider_mode"] = provider_mode
+    if provider_mode not in {"products", "services"}:
+        return redirect(url_for("provider_workspace_pending"))
+
+    app_updates = db.execute("""
+        SELECT id, title, version, body, created_at
+        FROM app_updates
+        WHERE is_active = 1 AND audience IN ('all', 'shopkeepers')
+        ORDER BY id DESC LIMIT 10
+    """).fetchall()
+
+    if provider_mode == "services":
+        services = db.execute("""
+            SELECT id, name, description, price, estimated_minutes, is_available,
+                   category_id
+            FROM services WHERE provider_id = ? ORDER BY id DESC
+        """, (session["user_id"],)).fetchall()
+        booking_stats = db.execute("""
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN b.status IN ('Pending', 'Order Placed', 'Verified') THEN 1 ELSE 0 END) AS open_count
+            FROM service_bookings AS b
+            JOIN services AS sv ON sv.id = b.service_id
+            WHERE sv.provider_id = ?
+        """, (session["user_id"],)).fetchone()
+        recent_bookings = db.execute("""
+            SELECT b.id, b.status, b.estimated_cost, b.details, b.created_at,
+                   sv.name AS service_name, u.full_name AS student_name
+            FROM service_bookings AS b
+            JOIN services AS sv ON sv.id = b.service_id
+            JOIN users AS u ON u.id = b.student_id
+            WHERE sv.provider_id = ?
+            ORDER BY b.id DESC LIMIT 8
+        """, (session["user_id"],)).fetchall()
+        return render_template(
+            "provider_services_dashboard.html",
+            services=services,
+            booking_stats=booking_stats,
+            recent_bookings=recent_bookings,
+            app_updates=app_updates,
+            active_page="overview",
+            page_heading="Services Overview",
+        )
 
     shop = db.execute("""
         SELECT id, name, category_id, address
@@ -3223,20 +3296,8 @@ def provider_dashboard():
         ORDER BY id DESC LIMIT 1
     """, (session["user_id"],)).fetchone()
 
-    services = db.execute("""
-        SELECT
-            id,
-            name,
-            description,
-            price,
-            estimated_minutes,
-            is_available
-        FROM services
-        WHERE provider_id = ?
-        ORDER BY id DESC
-    """, (session["user_id"],)).fetchall()
-
     products = []
+    recent_orders = []
     if shop:
         products = db.execute("""
             SELECT p.*, c.name AS category_name
@@ -3247,18 +3308,43 @@ def provider_dashboard():
             ORDER BY p.id DESC
         """, (shop["id"],)).fetchall()
 
+        recent_orders = db.execute("""
+            SELECT o.id, o.status, o.payment_status, o.created_at,
+                   SUM(oi.quantity) AS item_count,
+                   SUM(oi.quantity * oi.price) AS order_total
+            FROM orders o
+            JOIN order_items oi ON oi.order_id = o.id
+            JOIN products p ON p.id = oi.product_id
+            WHERE p.shop_id = ?
+            GROUP BY o.id, o.status, o.payment_status, o.created_at
+            ORDER BY o.id DESC
+            LIMIT 5
+        """, (shop["id"],)).fetchall()
+
+    product_stats = {
+        "total": len(products),
+        "published": sum(bool(product["is_published"]) for product in products),
+        "pending": sum(not bool(product["is_published"]) for product in products),
+        "low_stock": sum(
+            int(product["stock_quantity"] or 0) <= 5
+            for product in products if product["is_published"]
+        ),
+    }
+
     return render_template(
         "provider_dashboard.html",
-        services=services,
         shop=shop,
         products=products,
+        recent_orders=recent_orders,
+        product_stats=product_stats,
+        app_updates=app_updates,
         active_page="overview",
         page_heading="Overview"
     )
 
 
 @app.route("/provider/products")
-@role_required("provider")
+@provider_mode_required("products")
 def provider_products():
     db = get_db()
     shop = db.execute("""
@@ -3269,10 +3355,11 @@ def provider_products():
     products = []
     if shop:
         products = db.execute("""
-            SELECT p.*, c.name AS category_name
+            SELECT p.*, c.name AS category_name, pur.id AS pending_update_id
             FROM products p
             LEFT JOIN shops s ON s.id = p.shop_id
             LEFT JOIN categories c ON c.id = s.category_id
+            LEFT JOIN product_update_requests pur ON pur.product_id = p.id AND pur.status = 'pending'
             WHERE p.shop_id = ?
             ORDER BY p.id DESC
         """, (shop["id"],)).fetchall()
@@ -3281,19 +3368,91 @@ def provider_products():
 
 
 @app.route("/provider/services")
-@role_required("provider")
+@provider_mode_required("services")
 def provider_services():
     db = get_db()
     services = db.execute("""
-        SELECT id, name, description, price, estimated_minutes, is_available
-        FROM services WHERE provider_id = ? ORDER BY id DESC
+        SELECT sv.id, sv.name, sv.description, sv.price, sv.estimated_minutes,
+               sv.is_available, c.name AS category_name
+        FROM services AS sv LEFT JOIN categories AS c ON c.id = sv.category_id
+        WHERE sv.provider_id = ? ORDER BY sv.id DESC
     """, (session["user_id"],)).fetchall()
+    categories = get_provider_service_categories(db)
     return render_template("provider_services.html", services=services,
-        active_page="services", page_heading="My Services")
+        categories=categories, active_page="services", page_heading="Services Management")
+
+
+@app.route("/provider/services/add", methods=["GET", "POST"])
+@provider_mode_required("services")
+def provider_add_service():
+    db = get_db()
+    categories = get_provider_service_categories(db)
+    if request.method == "POST":
+        try:
+            name, description, category_id, price, estimated_minutes, pricing_json = validate_provider_service_form(db)
+            db.execute("""
+                INSERT INTO services
+                    (name, description, category_id, provider_id, price,
+                     estimated_minutes, is_available, pricing_options)
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+            """, (name, description, category_id, session["user_id"], price,
+                  estimated_minutes, pricing_json))
+            db.commit()
+            flash("Service added and made available to students.", "success")
+            return redirect(url_for("provider_services"))
+        except ValueError as error:
+            flash(str(error), "error")
+        except sqlite3.Error:
+            db.rollback()
+            app.logger.exception("Provider service creation failed")
+            flash("Could not add the service. Please try again.", "error")
+    return render_template("provider_service_form.html", service=None,
+        categories=categories, active_page="services", page_heading="Add Service")
+
+
+@app.route("/provider/services/<int:service_id>/edit", methods=["GET", "POST"])
+@provider_mode_required("services")
+def provider_edit_service(service_id):
+    db = get_db()
+    service = db.execute("""
+        SELECT sv.*, c.slug AS category_slug
+        FROM services AS sv
+        LEFT JOIN categories AS c ON c.id = sv.category_id
+        WHERE sv.id = ? AND sv.provider_id = ?
+    """, (service_id, session["user_id"])).fetchone()
+    if service is None:
+        flash("Service not found in your provider account.", "error")
+        return redirect(url_for("provider_services"))
+    categories = get_provider_service_categories(db)
+    if request.method == "POST":
+        try:
+            name, description, category_id, price, estimated_minutes, pricing_json = validate_provider_service_form(db)
+            db.execute("""
+                UPDATE services
+                SET name = ?, description = ?, category_id = ?, price = ?,
+                    estimated_minutes = ?, pricing_options = ?
+                WHERE id = ? AND provider_id = ?
+            """, (name, description, category_id, price, estimated_minutes,
+                  pricing_json, service_id, session["user_id"]))
+            db.commit()
+            flash("Service details and rates updated.", "success")
+            return redirect(url_for("provider_services"))
+        except ValueError as error:
+            flash(str(error), "error")
+        except sqlite3.Error:
+            db.rollback()
+            app.logger.exception("Provider service update failed")
+            flash("Could not update the service. Please try again.", "error")
+    item = dict(service)
+    item["pricing_editor_text"] = "\n".join(
+        f"{rate['name']} = {rate['price']}" for rate in service_rate_options(service)
+    )
+    return render_template("provider_service_form.html", service=item,
+        categories=categories, active_page="services", page_heading="Edit Service")
 
 
 @app.route("/provider/products/add", methods=["GET", "POST"])
-@role_required("provider")
+@provider_mode_required("products")
 def provider_add_product():
     db = get_db()
     shop = db.execute("""
@@ -3352,6 +3511,89 @@ def provider_add_product():
 
     return render_template("provider_add_product.html", shop=shop,
         active_page="add_product", page_heading="Add Product")
+
+
+@app.route("/provider/products/<int:product_id>/edit", methods=["GET", "POST"])
+@provider_mode_required("products")
+def provider_edit_product(product_id):
+    db = get_db()
+    product = db.execute("""
+        SELECT p.*, s.name AS shop_name, c.slug AS shop_category_slug
+        FROM products p
+        JOIN shops s ON s.id = p.shop_id
+        LEFT JOIN categories c ON c.id = s.category_id
+        WHERE p.id = ? AND s.provider_id = ?
+    """, (product_id, session["user_id"])).fetchone()
+    if not product:
+        flash("Product not found in your shop.", "error")
+        return redirect(url_for("provider_products"))
+
+    pending_update = db.execute("""
+        SELECT * FROM product_update_requests
+        WHERE product_id = ? AND provider_id = ? AND status = 'pending'
+    """, (product_id, session["user_id"])).fetchone()
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+        price_text = request.form.get("price", "").strip()
+        stock_text = request.form.get("stock_quantity", "0").strip()
+        sizes_text = request.form.get("sizes", "").strip()
+        out_text = request.form.get("out_of_stock_sizes", "").strip()
+        image_url = request.form.get("image_url", "").strip()
+        try:
+            price = float(price_text)
+            stock = int(stock_text)
+            if not name or price < 0 or stock < 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            flash("Enter a product name, valid price, and valid stock quantity.", "error")
+            return redirect(url_for("provider_edit_product", product_id=product_id))
+
+        try:
+            image_url = save_product_image(request.files.get("product_image")) or image_url or (pending_update["image_url"] if pending_update else None) or product["image_url"]
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("provider_edit_product", product_id=product_id))
+
+        is_clothing = product["shop_category_slug"] == "clothing-tailoring"
+        sizes = list(dict.fromkeys(v.strip().upper() for v in sizes_text.split(",") if v.strip())) if is_clothing else []
+        out_sizes = list(dict.fromkeys(v.strip().upper() for v in out_text.split(",") if v.strip())) if is_clothing else []
+        sizes = [size for size in sizes if size not in out_sizes]
+        try:
+            if pending_update:
+                db.execute("""
+                    UPDATE product_update_requests
+                    SET name = ?, description = ?, price = ?, image_url = ?, sizes = ?,
+                        out_of_stock_sizes = ?, stock_quantity = ?, created_at = CURRENT_TIMESTAMP
+                    WHERE id = ? AND product_id = ? AND provider_id = ? AND status = 'pending'
+                """, (name, description, price, image_url or None, ", ".join(sizes),
+                      ", ".join(out_sizes), stock, pending_update["id"], product_id, session["user_id"]))
+            else:
+                db.execute("""
+                    INSERT INTO product_update_requests
+                        (product_id, provider_id, name, description, price, image_url,
+                         sizes, out_of_stock_sizes, stock_quantity)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (product_id, session["user_id"], name, description, price,
+                      image_url or None, ", ".join(sizes), ", ".join(out_sizes), stock))
+            db.commit()
+            flash("Updated version sent to Admin for approval. The current listing stays live until review.", "success")
+            return redirect(url_for("provider_products"))
+        except sqlite3.Error:
+            db.rollback()
+            app.logger.exception("Shopkeeper product update failed")
+            flash("Could not update the product. Please try again.", "error")
+
+    form_product = dict(product)
+    if pending_update:
+        form_product.update({key: pending_update[key] for key in (
+            "name", "description", "price", "image_url", "sizes",
+            "out_of_stock_sizes", "stock_quantity"
+        )})
+    shop = {"name": product["shop_name"], "category_slug": product["shop_category_slug"]}
+    return render_template("provider_add_product.html", shop=shop, product=form_product,
+        active_page="products", page_heading="Edit Product")
 
 
 # =========================================================
@@ -3519,12 +3761,11 @@ def student_dashboard():
         WHERE setting_key IN ('upi_id', 'payment_qr', 'hostel_name')
     """).fetchall()
     payment_settings = {row["setting_key"]: row["setting_value"] for row in payment_settings_rows}
-    hostel_notices = db.execute("""
-        SELECT id, title, body, created_at
-        FROM hostel_notices
-        WHERE is_active = 1
-        ORDER BY id DESC
-        LIMIT 20
+    app_updates = db.execute("""
+        SELECT id, title, version, body, created_at
+        FROM app_updates
+        WHERE is_active = 1 AND audience IN ('all', 'students')
+        ORDER BY id DESC LIMIT 20
     """).fetchall()
     today = date.today()
     student_week_start = today - timedelta(days=today.weekday())
@@ -3554,7 +3795,7 @@ def student_dashboard():
         paid_total=paid_total,
         pending_total=pending_total,
         payment_settings=payment_settings,
-        hostel_notices=hostel_notices,
+        app_updates=app_updates,
         mess_menu=student_mess_menu,
         mess_week_start=student_week_start,
         mess_week_end=student_week_end,
@@ -3580,6 +3821,7 @@ def my_cart():
             p.description,
             p.price,
             p.image_url,
+            p.stock_quantity,
             ci.quantity,
             s.name AS shop_name,
             (p.price * ci.quantity) AS item_total
@@ -3611,13 +3853,17 @@ def checkout():
         if not buy_now_product_id.isdigit():
             flash("That product could not be selected.", "danger")
             return redirect(url_for("marketplace"))
+        try:
+            buy_now_quantity = max(1, int(request.args.get("quantity", "1")))
+        except (TypeError, ValueError):
+            buy_now_quantity = 1
         cart_products = db.execute("""
             SELECT p.id AS product_id, p.name, p.price, p.stock_quantity,
-                   p.is_available, p.is_published, 1 AS quantity, s.is_active
+                   p.is_available, p.is_published, ? AS quantity, s.is_active
             FROM products AS p
             JOIN shops AS s ON p.shop_id = s.id
             WHERE p.id = ?
-        """, (int(buy_now_product_id),)).fetchall()
+        """, (buy_now_quantity, int(buy_now_product_id))).fetchall()
     else:
         cart_products = db.execute("""
             SELECT
@@ -3654,7 +3900,7 @@ def checkout():
 
         if item["quantity"] > item["stock_quantity"]:
             flash(f'Insufficient stock for {item["name"]}.', "danger")
-            return redirect(url_for("my_cart"))
+            return redirect(url_for("marketplace" if buy_now_product_id else "my_cart"))
 
     cart_total = sum(
         item["price"] * item["quantity"]
@@ -3665,7 +3911,8 @@ def checkout():
         "checkout.html",
         cart_products=cart_products,
         cart_total=cart_total,
-        buy_now_product_id=buy_now_product_id if buy_now_product_id.isdigit() else ""
+        buy_now_product_id=buy_now_product_id if buy_now_product_id.isdigit() else "",
+        buy_now_stock=(cart_products[0]["stock_quantity"] if buy_now_product_id.isdigit() and cart_products else 0)
     )
 
 # ==========================================
@@ -3685,13 +3932,20 @@ def place_cart_order():
             if not buy_now_product_id.isdigit():
                 flash("That product could not be selected.", "danger")
                 return redirect(url_for("marketplace"))
+            try:
+                buy_now_quantity = int(request.form.get("buy_now_quantity", "1"))
+                if buy_now_quantity < 1:
+                    raise ValueError
+            except (TypeError, ValueError):
+                flash("Choose a quantity of at least one.", "danger")
+                return redirect(url_for("checkout", buy_now=buy_now_product_id))
             cart_products = db.execute("""
-                SELECT p.id AS product_id, 1 AS quantity, p.name, p.price,
+                SELECT p.id AS product_id, ? AS quantity, p.name, p.price,
                        p.stock_quantity, p.is_available, p.is_published, s.is_active
                 FROM products AS p
                 JOIN shops AS s ON p.shop_id = s.id
                 WHERE p.id = ?
-            """, (int(buy_now_product_id),)).fetchall()
+            """, (buy_now_quantity, int(buy_now_product_id))).fetchall()
         else:
             cart_products = db.execute("""
                 SELECT
@@ -3739,7 +3993,7 @@ def place_cart_order():
                     f"Insufficient stock for {item['name']}.",
                     "danger"
                 )
-                return redirect(url_for("my_cart"))
+                return redirect(url_for("checkout", buy_now=buy_now_product_id) if buy_now_product_id else url_for("my_cart"))
 
         # 4. Calculate cart total
         cart_total = sum(
@@ -3950,8 +4204,8 @@ def student_services_page(category):
     db = get_db()
     services = []
     if category != "requests":
-        services = db.execute("""
-            SELECT sv.id, sv.name, sv.description, sv.price, sv.estimated_minutes,
+        service_rows = db.execute("""
+            SELECT sv.id, sv.name, sv.description, sv.price, sv.pricing_options, sv.estimated_minutes,
                    c.name AS category_name, c.slug AS category_slug,
                    s.name AS shop_name, s.address AS shop_address,
                    u.full_name AS provider_name
@@ -3963,6 +4217,11 @@ def student_services_page(category):
               AND (s.id IS NULL OR s.is_active = 1)
             ORDER BY sv.id DESC
         """, (category,)).fetchall()
+        services = []
+        for row in service_rows:
+            item = dict(row)
+            item["option_rates"] = service_rate_options(row)
+            services.append(item)
     bookings = db.execute("""
         SELECT b.*, sv.name AS service_name, c.slug AS category_slug
         FROM service_bookings AS b
@@ -4032,15 +4291,47 @@ def track_service_booking(booking_id):
 def book_service(service_id):
     db = get_db()
     service = db.execute("""
-        SELECT sv.id, c.slug AS category_slug
+        SELECT sv.id, sv.name, sv.price, sv.pricing_options, c.slug AS category_slug
         FROM services AS sv JOIN categories AS c ON c.id = sv.category_id
         WHERE sv.id = ? AND sv.is_available = 1
     """, (service_id,)).fetchone()
-    details = request.form.get("details", "").strip()
+    extra_details = request.form.get("details", "").strip()
     preferred_at = request.form.get("preferred_at", "").strip()
-    if service is None or not details:
+    if service is None:
         flash("Service is unavailable or request details are missing.", "error")
         return redirect(url_for("student_services"))
+    selected_items = []
+    estimated_cost = 0.0
+    options = service_rate_options(service)
+    for index, option in enumerate(options):
+        raw_quantity = request.form.get(f"item_qty_{index}", "0").strip()
+        try:
+            quantity = int(raw_quantity or 0)
+        except ValueError:
+            quantity = -1
+        if quantity < 0 or quantity > 99:
+            flash("Choose a quantity between 0 and 99 for each service option.", "error")
+            return redirect(url_for("student_services_page", category=service["category_slug"]))
+        if quantity:
+            unit_price = float(option["price"])
+            selected_items.append((option["name"], quantity, unit_price, option.get("unit", "unit")))
+            estimated_cost += unit_price * quantity
+    if not selected_items and not extra_details:
+        flash("Choose a service item or describe what you need.", "error")
+        return redirect(url_for("student_services_page", category=service["category_slug"]))
+    if not selected_items:
+        # For custom requests without a listed task, the admin's base price is an estimate.
+        estimated_cost = float(service["price"] or 0)
+    detail_lines = []
+    if selected_items:
+        detail_lines.append("Selected: " + "; ".join(
+            f"{name} × {quantity} — ₹{unit_price * quantity:.2f}"
+            for name, quantity, unit_price, _unit in selected_items
+        ))
+    if extra_details:
+        detail_lines.append("Notes: " + extra_details)
+    detail_lines.append(f"Estimated total: ₹{estimated_cost:.2f} (final amount confirmed by provider)")
+    details = "\n".join(detail_lines)
     if preferred_at:
         try:
             if datetime.fromisoformat(preferred_at) <= datetime.now():
@@ -4050,9 +4341,9 @@ def book_service(service_id):
             return redirect(url_for("student_services_page", category=service["category_slug"]))
     try:
         cursor = db.execute("""
-            INSERT INTO service_bookings (service_id, student_id, preferred_at, details)
-            VALUES (?, ?, ?, ?)
-        """, (service_id, session["user_id"], preferred_at or None, details))
+            INSERT INTO service_bookings (service_id, student_id, preferred_at, details, estimated_cost)
+            VALUES (?, ?, ?, ?, ?)
+        """, (service_id, session["user_id"], preferred_at or None, details, estimated_cost))
         db.commit()
         flash("Service request placed. Track each update on this page.", "success")
         return redirect(url_for("track_service_booking", booking_id=cursor.lastrowid))
@@ -4384,7 +4675,6 @@ def place_medical_order():
 def request_medical_appointment():
     db = get_db()
     doctor_id = request.form.get("doctor_id", "").strip()
-    preferred_at = request.form.get("preferred_at", "").strip()
     reason = request.form.get("reason", "").strip()
     try:
         doctor_id = int(doctor_id)
@@ -4392,15 +4682,14 @@ def request_medical_appointment():
             "SELECT id FROM medical_doctors WHERE id = ? AND is_active = 1",
             (doctor_id,),
         ).fetchone()
-        requested_time = datetime.fromisoformat(preferred_at)
-        if not doctor or requested_time <= datetime.now():
-            raise ValueError("Choose an available doctor and a future appointment time.")
+        if not doctor:
+            raise ValueError("Choose an available doctor.")
         db.execute("""
             INSERT INTO medical_appointments (student_id, doctor_id, preferred_at, reason)
-            VALUES (?, ?, ?, ?)
-        """, (session["user_id"], doctor_id, preferred_at, reason or None))
+            VALUES (?, ?, 'Awaiting doctor schedule', ?)
+        """, (session["user_id"], doctor_id, reason or None))
         db.commit()
-        flash("Appointment request sent. You can track its status below.", "success")
+        flash("Appointment request sent. The doctor will share the appointment time after confirming.", "success")
     except (ValueError, TypeError) as error:
         db.rollback()
         flash(str(error) or "Choose an available doctor and future appointment time.", "error")
@@ -4528,16 +4817,30 @@ def admin_medical_management():
             elif action == "appointment_status":
                 appointment_id = int(request.form.get("appointment_id", ""))
                 status = request.form.get("status", "")
+                scheduled_at = request.form.get("confirmed_at", "").strip()
                 if status not in {"Pending", "Confirmed", "Completed", "Cancelled"}:
                     raise ValueError("Choose a valid appointment status.")
+                appointment = db.execute(
+                    "SELECT id FROM medical_appointments WHERE id = ?", (appointment_id,)
+                ).fetchone()
+                if not appointment:
+                    raise ValueError("Appointment request was not found.")
+                if scheduled_at:
+                    scheduled_dt = datetime.fromisoformat(scheduled_at)
+                    if scheduled_dt <= datetime.now():
+                        raise ValueError("Choose a future appointment time.")
+                elif status == "Confirmed":
+                    raise ValueError("Set the doctor’s appointment time before confirming.")
                 db.execute("""
-                    UPDATE medical_appointments SET status = ?, admin_notes = ? WHERE id = ?
+                    UPDATE medical_appointments
+                    SET status = ?, confirmed_at = ?, admin_notes = ? WHERE id = ?
                 """, (
                     status,
+                    scheduled_at or None,
                     request.form.get("admin_notes", "").strip() or None,
                     appointment_id,
                 ))
-                flash("Appointment status updated.", "success")
+                flash("Appointment updated. The student can view and print the appointment slip.", "success")
             elif action == "medical_request_status":
                 request_id = int(request.form.get("request_id", ""))
                 status = request.form.get("status", "")
@@ -4749,11 +5052,84 @@ def admin_products():
         ORDER BY p.id DESC
     """, (category_filter, category_filter)).fetchall()
 
+    product_updates = db.execute("""
+        SELECT
+            pur.id AS request_id, pur.name AS proposed_name,
+            pur.description AS proposed_description, pur.price AS proposed_price,
+            pur.image_url AS proposed_image_url, pur.sizes AS proposed_sizes,
+            pur.out_of_stock_sizes AS proposed_out_of_stock_sizes,
+            pur.stock_quantity AS proposed_stock_quantity, pur.created_at AS submitted_at,
+            p.id AS product_id, p.name AS current_name, p.description AS current_description,
+            p.price AS current_price, p.image_url AS current_image_url,
+            p.sizes AS current_sizes, p.out_of_stock_sizes AS current_out_of_stock_sizes,
+            p.stock_quantity AS current_stock_quantity,
+            s.name AS shop_name, c.name AS category_name,
+            u.full_name AS provider_name
+        FROM product_update_requests pur
+        JOIN products p ON p.id = pur.product_id
+        JOIN shops s ON s.id = p.shop_id
+        LEFT JOIN categories c ON c.id = s.category_id
+        LEFT JOIN users u ON u.id = pur.provider_id
+        WHERE pur.status = 'pending'
+          AND (? = 'all' OR lower(c.slug) = ?)
+        ORDER BY pur.created_at ASC, pur.id ASC
+    """, (category_filter, category_filter)).fetchall()
+
     return render_template(
         "product_management.html",
         products=products,
-        category_filter=category_filter
+        category_filter=category_filter,
+        product_updates=product_updates
     )
+
+
+@app.route("/admin/product-updates/<int:request_id>/approve", methods=["POST"])
+@role_required("admin")
+def approve_product_update(request_id):
+    db = get_db()
+    update = db.execute("""
+        SELECT * FROM product_update_requests WHERE id = ? AND status = 'pending'
+    """, (request_id,)).fetchone()
+    if not update:
+        flash("That product update is no longer awaiting review.", "warning")
+        return redirect(url_for("admin_products"))
+    try:
+        db.execute("""
+            UPDATE products
+            SET name = ?, description = ?, price = ?, image_url = ?, sizes = ?,
+                out_of_stock_sizes = ?, stock_quantity = ?,
+                is_available = CASE WHEN ? > 0 THEN 1 ELSE 0 END
+            WHERE id = ?
+        """, (update["name"], update["description"], update["price"], update["image_url"],
+              update["sizes"], update["out_of_stock_sizes"], update["stock_quantity"],
+              update["stock_quantity"], update["product_id"]))
+        db.execute("""
+            UPDATE product_update_requests
+            SET status = 'approved', reviewed_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'pending'
+        """, (request_id,))
+        db.commit()
+        flash("Shopkeeper's product update approved and applied.", "success")
+    except sqlite3.Error:
+        db.rollback()
+        app.logger.exception("Approving shopkeeper product update failed")
+        flash("Could not approve this product update.", "danger")
+    return redirect(url_for("admin_products"))
+
+
+@app.route("/admin/product-updates/<int:request_id>/reject", methods=["POST"])
+@role_required("admin")
+def reject_product_update(request_id):
+    db = get_db()
+    cursor = db.execute("""
+        UPDATE product_update_requests
+        SET status = 'rejected', reviewed_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'pending'
+    """, (request_id,))
+    db.commit()
+    flash("Product update rejected. The existing listing was left unchanged." if cursor.rowcount else
+          "That product update is no longer awaiting review.", "success" if cursor.rowcount else "warning")
+    return redirect(url_for("admin_products"))
 
 
 # =========================================================
@@ -5113,7 +5489,7 @@ def toggle_product_publish(product_id):
     db = get_db()
 
     product = db.execute("""
-        SELECT id, is_published, is_available
+        SELECT id, is_published, is_available, stock_quantity
         FROM products
         WHERE id = ?
     """, (product_id,)).fetchone()
@@ -5127,7 +5503,7 @@ def toggle_product_publish(product_id):
 
     else:
 
-        if not product["is_published"] and not product["is_available"]:
+        if not product["is_published"] and int(product["stock_quantity"] or 0) < 1:
 
             flash(
                 "This product has no available stock. "
@@ -5145,9 +5521,11 @@ def toggle_product_publish(product_id):
 
             db.execute("""
                 UPDATE products
-                SET is_published = ?
+                SET is_published = ?,
+                    is_available = CASE WHEN ? = 1 THEN 1 ELSE is_available END
                 WHERE id = ?
             """, (
+                new_status,
                 new_status,
                 product_id
             ))
@@ -5239,6 +5617,54 @@ def add_to_cart(product_id):
         "message": "Product added to cart!",
         "cart_count": cart_result["total"]
     }
+
+
+@app.route("/cart/remove/<int:product_id>", methods=["POST"])
+@role_required("student")
+def remove_cart_item(product_id):
+    db = get_db()
+    db.execute(
+        "DELETE FROM cart_items WHERE student_id = ? AND product_id = ?",
+        (session["user_id"], product_id)
+    )
+    db.commit()
+    flash("Product removed from your cart.", "success")
+    return redirect(url_for("my_cart"))
+
+
+@app.route("/cart/update/<int:product_id>", methods=["POST"])
+@role_required("student")
+def update_cart_item(product_id):
+    db = get_db()
+    try:
+        quantity = int(request.form.get("quantity", ""))
+        if quantity < 1:
+            raise ValueError
+    except (TypeError, ValueError):
+        flash("Choose a quantity of at least one.", "danger")
+        return redirect(url_for("my_cart"))
+
+    product = db.execute("""
+        SELECT p.stock_quantity, p.is_available, p.is_published, s.is_active
+        FROM products p
+        JOIN shops s ON s.id = p.shop_id
+        JOIN cart_items ci ON ci.product_id = p.id
+        WHERE p.id = ? AND ci.student_id = ?
+    """, (product_id, session["user_id"])).fetchone()
+    if not product or not product["is_available"] or not product["is_published"] or not product["is_active"]:
+        flash("This product is no longer available.", "danger")
+        return redirect(url_for("my_cart"))
+    if quantity > product["stock_quantity"]:
+        flash("That quantity is not available. Please choose a lower quantity.", "warning")
+        return redirect(url_for("my_cart"))
+
+    db.execute("""
+        UPDATE cart_items SET quantity = ?
+        WHERE student_id = ? AND product_id = ?
+    """, (quantity, session["user_id"], product_id))
+    db.commit()
+    flash("Cart quantity updated.", "success")
+    return redirect(url_for("my_cart"))
 
 
 # =========================================================
@@ -5492,16 +5918,20 @@ def admin_create_user():
     full_name = request.form.get("full_name", "").strip()
     email = request.form.get("email", "").strip().lower()
     phone = request.form.get("phone", "").strip()
-    role = request.form.get("role", "").strip().lower()
+    account_type = request.form.get("account_type", "").strip().lower()
     password = request.form.get("password", "")
     confirm_password = request.form.get("confirm_password", "")
-    allowed_roles = {"admin", "warden", "provider"}
+    account_types = {
+        "admin": ("admin", None, "Admin"),
+        "products": ("provider", "products", "Product Shopkeeper"),
+        "services": ("provider", "services", "Service Provider"),
+    }
 
     if not full_name or len(full_name) > 120 or "@" not in email or "." not in email.rsplit("@", 1)[-1]:
         flash("Enter a name and valid email address.", "error")
         return redirect(url_for("admin_users", _anchor="add-staff"))
-    if role not in allowed_roles:
-        flash("Choose Admin, Warden or Shopkeeper.", "error")
+    if account_type not in account_types:
+        flash("Choose Admin, Product Shopkeeper or Service Provider.", "error")
         return redirect(url_for("admin_users", _anchor="add-staff"))
     if len(password) < 8:
         flash("Password must be at least 8 characters.", "error")
@@ -5513,12 +5943,13 @@ def admin_create_user():
     db = get_db()
     try:
         db.execute("""
-            INSERT INTO users (full_name, email, phone, password_hash, role, is_active)
-            VALUES (?, ?, ?, ?, ?, 1)
-        """, (full_name, email, phone or None, generate_password_hash(password), role))
+            INSERT INTO users
+                (full_name, email, phone, password_hash, role, provider_type, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, 1)
+        """, (full_name, email, phone or None, generate_password_hash(password),
+              account_types[account_type][0], account_types[account_type][1]))
         db.commit()
-        role_label = "Shopkeeper" if role == "provider" else role.title()
-        flash(f"{role_label} account created. They can now sign in with the selected role.", "success")
+        flash(f"{account_types[account_type][2]} account created with its workspace access assigned.", "success")
     except sqlite3.IntegrityError:
         db.rollback()
         flash("An account with this email already exists.", "error")
@@ -5527,6 +5958,26 @@ def admin_create_user():
         app.logger.exception("Admin staff account creation failed")
         flash("Could not create the account. Please try again.", "error")
     return redirect(url_for("admin_users", _anchor="add-staff"))
+
+
+@app.route("/admin/users/<int:user_id>/provider-type", methods=["POST"])
+@role_required("admin")
+def admin_set_provider_type(user_id):
+    provider_type = request.form.get("provider_type", "").strip().lower()
+    if provider_type not in {"products", "services"}:
+        flash("Choose Product Shopkeeper or Service Provider.", "error")
+        return redirect(url_for("admin_users"))
+    db = get_db()
+    cursor = db.execute(
+        "UPDATE users SET provider_type = ? WHERE id = ? AND role = 'provider'",
+        (provider_type, user_id),
+    )
+    if cursor.rowcount == 0:
+        flash("Shopkeeper account not found.", "error")
+    else:
+        db.commit()
+        flash("Shopkeeper workspace access updated. They must sign in again to load the assigned dashboard.", "success")
+    return redirect(url_for("admin_users"))
 
 @app.route("/admin/users")
 @app.route("/admin/user-management")
@@ -5542,7 +5993,7 @@ def admin_users():
         "",
         "student",
         "admin",
-        "warden",
+        "warden",  # Historical accounts remain visible so an administrator can deactivate them.
         "provider"
     }
 
@@ -5558,6 +6009,7 @@ def admin_users():
             phone,
             student_id,
             role,
+            provider_type,
             is_active,
             created_at
         FROM users
@@ -5645,7 +6097,7 @@ def admin_download_users():
         term = f"%{search}%"
         params.extend([term, term, term, term])
 
-    if selected_role in {"student", "admin", "warden", "provider"}:
+    if selected_role in {"student", "admin", "provider", "warden"}:
         query += " AND role = ?"
         params.append(selected_role)
 
@@ -5747,6 +6199,60 @@ def toggle_user(user_id):
             "Unable to update user status.",
             "error"
         )
+
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_staff_account(user_id):
+    """Permanently remove an admin/shopkeeper login while preserving catalog history."""
+    db = get_db()
+    if user_id == session.get("user_id"):
+        flash("You cannot delete the account you are currently using.", "error")
+        return redirect(url_for("admin_users"))
+
+    user = db.execute(
+        "SELECT id, full_name, role FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    if user is None:
+        flash("Account not found.", "error")
+        return redirect(url_for("admin_users"))
+    if user["role"] not in {"admin", "provider"}:
+        flash("Only admin and shopkeeper accounts can be permanently deleted here.", "error")
+        return redirect(url_for("admin_users"))
+
+    if user["role"] == "admin":
+        active_admins = db.execute(
+            "SELECT COUNT(*) FROM users WHERE role = 'admin' AND is_active = 1"
+        ).fetchone()[0]
+        if active_admins <= 1 and db.execute(
+            "SELECT is_active FROM users WHERE id = ?", (user_id,)
+        ).fetchone()[0]:
+            flash("The last active admin account cannot be deleted.", "error")
+            return redirect(url_for("admin_users"))
+
+    try:
+        if user["role"] == "provider":
+            # Keep the shop, published products, and assigned services in the catalog.
+            db.execute("UPDATE shops SET provider_id = NULL WHERE provider_id = ?", (user_id,))
+            db.execute("UPDATE services SET provider_id = NULL WHERE provider_id = ?", (user_id,))
+            db.execute("DELETE FROM product_update_requests WHERE provider_id = ?", (user_id,))
+
+        # Preserve notices and announcements after their author account is removed.
+        db.execute("UPDATE hostel_notices SET created_by = NULL WHERE created_by = ?", (user_id,))
+        db.execute("UPDATE app_updates SET created_by = NULL WHERE created_by = ?", (user_id,))
+        db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        db.commit()
+        label = "Shopkeeper" if user["role"] == "provider" else "Admin"
+        flash(f"{label} account for {user['full_name']} was deleted.", "success")
+    except sqlite3.IntegrityError:
+        db.rollback()
+        flash("This account is linked to existing records and could not be deleted. Deactivate it instead.", "error")
+    except sqlite3.Error:
+        db.rollback()
+        app.logger.exception("Admin account deletion failed for user %s", user_id)
+        flash("Could not delete this account. Please try again.", "error")
 
     return redirect(url_for("admin_users"))
 

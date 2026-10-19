@@ -54,8 +54,8 @@
 
             {% for item in cart_products %}
                 <div class="checkout-item">
-                    <span>{{ item["name"] }} × {{ item["quantity"] }}</span>
-                    <span>₹{{ "%.2f"|format(item["price"] * item["quantity"]) }}</span>
+                    <span>{{ item["name"] }}{% if buy_now_product_id %}<label class="checkout-quantity-label" for="buy_now_quantity">Quantity</label><span class="checkout-quantity-stepper"><button type="button" data-quantity-step="-1" aria-label="Decrease quantity">−</button><input class="checkout-quantity-input" id="buy_now_quantity" name="buy_now_quantity" type="number" min="1" value="{{ item['quantity'] }}" required><button type="button" data-quantity-step="1" aria-label="Increase quantity">+</button></span>{% else %} × {{ item["quantity"] }}{% endif %}</span>
+                    <span class="checkout-line-total" data-unit-price="{{ item['price'] }}">₹{{ "%.2f"|format(item["price"] * item["quantity"]) }}</span>
                 </div>
             {% endfor %}
 
@@ -63,7 +63,7 @@
 
             <div class="checkout-total">
                 <strong>Total Amount</strong>
-                <strong>₹{{ "%.2f"|format(cart_total) }}</strong>
+                <strong id="checkoutGrandTotal">₹{{ "%.2f"|format(cart_total) }}</strong>
             </div>
         </div>
 
@@ -120,18 +120,24 @@
     gap: 16px;
     margin: 12px 0;
 }
+.checkout-quantity-label{display:block;margin-top:12px;color:#64647e;font-size:12px;font-weight:700}
+.checkout-quantity-stepper{display:flex;align-items:center;width:max-content;margin-top:6px;overflow:hidden;border:1px solid #ddd8f2;border-radius:10px;background:#f8f6ff}
+.checkout-quantity-stepper button{width:40px;height:40px;border:0;background:#eeeaff;color:#5c43c8;font-size:20px;font-weight:700;cursor:pointer}
+.checkout-quantity-stepper button:hover{background:#ded7ff}
+.checkout-quantity-stepper input{width:54px;height:40px;padding:5px;border:0;border-inline:1px solid #e5e0f2;border-radius:0;background:#fff;color:#292744;font:inherit;text-align:center;appearance:textfield}
+.checkout-quantity-stepper input::-webkit-outer-spin-button,.checkout-quantity-stepper input::-webkit-inner-spin-button{margin:0;appearance:none}
 .checkout-button {
     width: 100%;
     margin-top: 24px;
     padding: 15px;
     color: white;
-    background: #4f46e5;
+    background: var(--hh-primary);
     border: 0;
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
 }
-.checkout-button:hover { background: #4338ca; }
+.checkout-button:hover { background: var(--hh-primary-dark); }
 .checkout-back {
     display: block;
     margin-top: 16px;
@@ -158,4 +164,27 @@
     }
 }
 </style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-quantity-step]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const input = button.parentElement.querySelector('input[type="number"]');
+            if (!input) return;
+            input.value = String(Math.max(1, (parseInt(input.value, 10) || 1) + Number(button.dataset.quantityStep)));
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+    });
+    const quantityInput = document.getElementById("buy_now_quantity");
+    if (!quantityInput) return;
+    quantityInput.addEventListener("input", function () {
+        const quantity = Math.max(1, parseInt(quantityInput.value, 10) || 1);
+        const lineTotal = document.querySelector(".checkout-line-total");
+        const total = document.getElementById("checkoutGrandTotal");
+        const unitPrice = Number(lineTotal?.dataset.unitPrice || 0);
+        const formatted = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(unitPrice * quantity);
+        if (lineTotal) lineTotal.textContent = "₹" + formatted;
+        if (total) total.textContent = "₹" + formatted;
+    });
+});
+</script>
 {% endblock %}

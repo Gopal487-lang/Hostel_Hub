@@ -2,40 +2,98 @@
 {% block title %}{{ page_title }} | HostelHub{% endblock %}
 {% block content %}
 <style>
-.svc-page{max-width:1180px;margin:28px auto;padding:0 18px}.svc-hero{padding:26px;border-radius:18px;background:linear-gradient(120deg,#edf2ff,#e9f8f3);margin-bottom:18px}.svc-hero h1{margin:0 0 7px}.svc-muted{color:#6e778c;font-size:13px;line-height:1.55}.svc-nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.svc-nav a{padding:8px 11px;border-radius:9px;border:1px solid #dcd8ff;color:#5946cb;background:#fff;text-decoration:none;font-size:13px;font-weight:650}.svc-nav a[aria-current="page"]{background:#6558f5;color:#fff;border-color:#6558f5}.svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px}.svc-card{padding:18px;border-radius:15px;background:#fff;border:1px solid #e7eaf1;box-shadow:0 6px 20px #25335108}.svc-card h2,.svc-card h3{margin:0 0 8px}.svc-price{font-size:20px;font-weight:800;margin:14px 0}.svc-form{display:grid;gap:10px;margin-top:14px}.svc-form label{font-weight:650;font-size:13px}.svc-form input,.svc-form textarea{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #d8ddea;border-radius:9px;font:inherit}.svc-form textarea{min-height:80px;resize:vertical}.svc-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border:0;border-radius:9px;background:#6558f5;color:#fff;text-decoration:none;font-weight:700;cursor:pointer}.svc-flash{padding:11px 14px;border-radius:9px;background:#e8f7ee;margin:10px 0}.svc-flash.error{background:#ffeded;color:#9d2c37}.svc-status{display:inline-block;padding:5px 9px;border-radius:20px;background:#eeeaff;color:#5744c1;font-size:12px;font-weight:700}.svc-empty{padding:18px;color:#6e778c}.svc-table{width:100%;border-collapse:collapse}.svc-table th,.svc-table td{text-align:left;padding:11px;border-bottom:1px solid #eceff5;vertical-align:top}.svc-table th{font-size:11px;color:#6e778c;text-transform:uppercase}.svc-table-wrap{overflow:auto}@media(max-width:600px){.svc-hero{padding:19px}.svc-table{min-width:620px}}
-.svc-track-link{display:inline-block;margin-top:7px;color:#5946cb;font-weight:700;text-decoration:none}.svc-track-link:hover{text-decoration:underline}
+.svc-page{max-width:1180px;margin:30px auto;padding:0 20px;color:#25253e}.svc-hero{position:relative;overflow:hidden;padding:clamp(22px,4vw,38px);border:1px solid #e5e1fa;border-radius:24px;background:radial-gradient(circle at 90% 0%,#e5e0ff 0,transparent 34%),linear-gradient(120deg,#f6f4ff,#f0fbf7);box-shadow:0 12px 34px #4537720b}.svc-hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.svc-eyebrow{display:inline-flex;align-items:center;gap:7px;color:#6852cc;font-size:11px;font-weight:850;letter-spacing:1.3px;text-transform:uppercase}.svc-hero h1{margin:10px 0;font-size:clamp(27px,4vw,40px);letter-spacing:-1px}.svc-muted{color:#6e778c;font-size:13px;line-height:1.6}.svc-hero-copy{max-width:670px;margin:0}.svc-back{display:inline-flex;align-items:center;gap:7px;margin-top:20px;padding:10px 14px;border:1px solid #dcd7f8;border-radius:11px;background:#fff;color:#5746bd;font-size:13px;font-weight:750;text-decoration:none}.svc-nav{display:flex;gap:9px;flex-wrap:wrap;margin-top:22px}.svc-nav a{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid #e2e3ef;border-radius:11px;background:#fff;color:#555b70;text-decoration:none;font-size:12px;font-weight:750;transition:.18s}.svc-nav a:hover{border-color:#bcb1f2;color:#5543bf;transform:translateY(-1px)}.svc-nav a[aria-current=page]{border-color:#6f58d8;background:#6f58d8;color:#fff;box-shadow:0 5px 14px #6f58d833}.svc-flash{padding:12px 15px;margin:14px 0;border-radius:12px;background:#e8f7ee;color:#176342;font-weight:650}.svc-flash.error{background:#ffeded;color:#9d2c37}.svc-section-heading{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:28px 2px 14px}.svc-section-heading h2{margin:4px 0;font-size:20px}.svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:17px}.svc-card{min-width:0;padding:20px;border:1px solid #e7e9f1;border-radius:18px;background:#fff;box-shadow:0 7px 22px #25335108}.svc-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.svc-card h2{margin:0 0 7px;font-size:18px;overflow-wrap:anywhere}.svc-provider{font-size:12px}.svc-time{flex:none;padding:7px 9px;border-radius:10px;background:#f4f1ff;color:#5d49c0;font-size:11px;font-weight:750}.svc-card-description{min-height:40px;margin:12px 0;color:#667086;font-size:12px;line-height:1.6}.svc-rate-title{margin:16px 0 8px;font-size:12px;font-weight:800;color:#555a70}.svc-rate-list{display:grid;gap:7px}.svc-rate-option{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 11px;border:1px solid #edf0f5;border-radius:11px;background:#fafbfe}.svc-rate-name{display:block;font-size:12px;font-weight:750;color:#34374e}.svc-rate-unit{display:block;margin-top:3px;color:#8990a1;font-size:10px}.svc-rate-price{display:block;margin-bottom:5px;text-align:right;color:#5141bd;font-size:12px;font-weight:800}.svc-qty{display:inline-flex;align-items:center;overflow:hidden;border:1px solid #e0def0;border-radius:9px;background:#fff}.svc-qty button{width:31px;height:32px;border:0;background:#f2efff;color:#5c49c4;font-size:17px;font-weight:800;cursor:pointer}.svc-qty input{width:38px;height:32px;margin:0!important;padding:0!important;border:0!important;border-inline:1px solid #eceaf4!important;border-radius:0!important;text-align:center;font-size:12px!important;font-weight:750;appearance:textfield}.svc-qty input::-webkit-inner-spin-button,.svc-qty input::-webkit-outer-spin-button{appearance:none}.svc-form{display:grid;gap:12px;margin-top:16px}.svc-form label{display:block;color:#555a70;font-size:12px;font-weight:700}.svc-form textarea,.svc-form input[type=datetime-local]{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border:1px solid #d8ddea;border-radius:10px;background:#fff;color:#292943;font:inherit;font-size:13px}.svc-form textarea{min-height:72px;resize:vertical}.svc-estimate{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border:1px solid #e5e1fa;border-radius:13px;background:linear-gradient(110deg,#f5f2ff,#f2fbf7)}.svc-estimate small{display:block;color:#777d90;font-size:10px}.svc-estimate strong{color:#423596;font-size:20px}.svc-estimate-note{margin:-5px 0 0;color:#83899a;font-size:10px;line-height:1.45}.svc-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:45px;padding:11px 15px;border:0;border-radius:11px;background:linear-gradient(110deg,#8068e9,#634bd0);color:#fff;text-decoration:none;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px #7055df2a;transition:.18s}.svc-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px #7055df3a;color:#fff}.svc-card .svc-btn{width:100%}.svc-empty{padding:35px 20px;border:1px dashed #d8d7e8;border-radius:16px;background:#fff;color:#70778c;text-align:center}.svc-empty strong{display:block;margin-bottom:7px;color:#35364d;font-size:16px}.svc-requests{display:grid;gap:12px}.svc-request{padding:17px;border:1px solid #e7e9f1;border-radius:15px;background:#fff;box-shadow:0 5px 16px #25335108}.svc-request-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.svc-request h3{margin:0 0 5px;font-size:15px}.svc-status{display:inline-flex;padding:6px 9px;border-radius:999px;background:#eeeaff;color:#5744c1;font-size:10px;font-weight:800}.svc-request p{margin:9px 0;color:#687187;font-size:12px;line-height:1.6;overflow-wrap:anywhere;white-space:pre-line}.svc-request-bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid #eff0f5}.svc-request-bottom strong{color:#423596}.svc-track-link{color:#5946cb;font-size:12px;font-weight:800;text-decoration:none}.svc-track-link:hover{text-decoration:underline}
+@media(max-width:600px){.svc-page{width:100%;padding:0 13px;margin:17px auto}.svc-hero{padding:21px 17px;border-radius:18px}.svc-hero-top{display:block}.svc-hero h1{font-size:27px}.svc-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.svc-nav a{justify-content:center;padding:10px 7px;font-size:11px;text-align:center}.svc-grid{grid-template-columns:minmax(0,1fr);gap:12px}.svc-card{padding:16px}.svc-section-heading{align-items:flex-start;flex-direction:column;margin-top:22px}.svc-rate-option{gap:7px;padding:9px}.svc-rate-name{font-size:11px}.svc-estimate strong{font-size:19px}.svc-request{padding:14px}.svc-request-head{flex-direction:column}.svc-request-bottom{align-items:flex-start}}
 </style>
 <main class="svc-page">
     <section class="svc-hero">
-        <h1>🛠️ {{ page_title }}</h1>
-        <p class="svc-muted">Browse active campus services, send a booking request and track updates from the admin.</p>
-        <a class="svc-btn" href="{{ url_for('student_dashboard') }}#section-services">← Student Dashboard</a>
+        <div class="svc-hero-top">
+            <div>
+                <span class="svc-eyebrow">HostelHub · Service desk</span>
+                <h1>{{ page_title }}</h1>
+                <p class="svc-muted svc-hero-copy">Choose exactly what you need. Select quantities to see an instant estimate before you send a request. The provider confirms the final amount before starting work.</p>
+            </div>
+            <a class="svc-back" href="{{ url_for('student_dashboard') }}#section-services">← Dashboard</a>
+        </div>
         <nav class="svc-nav" aria-label="Service pages">
             {% for slug,label in service_categories.items() %}<a href="{{ url_for('student_services_page', category=slug) }}" {{ 'aria-current=page' if category == slug }}>{{ label }}</a>{% endfor %}
         </nav>
     </section>
-    {% with messages = get_flashed_messages(with_categories=true) %}{% for kind,message in messages %}<div class="svc-flash {{ 'error' if kind == 'error' else '' }}">{{ message }}</div>{% endfor %}{% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for kind,message in messages %}<div class="svc-flash {{ 'error' if kind == 'error' else '' }}" role="status">{{ message }}</div>{% endfor %}{% endwith %}
 
     {% if category == 'requests' %}
-    <section class="svc-card"><h2>My Service Requests</h2><div class="svc-table-wrap"><table class="svc-table"><thead><tr><th>Service</th><th>Details</th><th>Preferred time</th><th>Status</th><th>Admin reply</th><th>Submitted</th></tr></thead><tbody>
-        {% for booking in bookings %}<tr><td>{{ booking.service_name }}</td><td>{{ booking.details }}</td><td>{{ booking.preferred_at or 'Flexible' }}</td><td><span class="svc-status">{{ booking.status }}</span></td><td>{{ booking.admin_notes or '—' }}</td><td>{{ booking.created_at }}<br><a class="svc-track-link" href="{{ url_for('track_service_booking', booking_id=booking.id) }}">Track this request →</a></td></tr>
-        {% else %}<tr><td colspan="6" class="svc-empty">No service requests yet. Choose a service page above to book one.</td></tr>{% endfor %}
-    </tbody></table></div></section>
+    <div class="svc-section-heading"><div><span class="svc-eyebrow">YOUR ACTIVITY</span><h2>Service requests</h2></div></div>
+    <section class="svc-requests">
+        {% for booking in bookings %}
+        <article class="svc-request">
+            <header class="svc-request-head"><div><h3>{{ booking.service_name }}</h3><span class="svc-muted">Request #{{ booking.id }} · {{ booking.created_at }}</span></div><span class="svc-status">{{ booking.status|replace('_',' ')|title }}</span></header>
+            <p>{{ booking.details }}</p>
+            <div class="svc-request-bottom"><strong>Estimate: ₹{{ '%.2f'|format(booking.estimated_cost or 0) }}</strong><span>{{ booking.preferred_at or 'Flexible timing' }}</span><a class="svc-track-link" href="{{ url_for('track_service_booking', booking_id=booking.id) }}">Track request →</a></div>
+        </article>
+        {% else %}<div class="svc-empty"><strong>No requests yet</strong>Choose a service above to create your first request.</div>{% endfor %}
+    </section>
     {% else %}
+    <div class="svc-section-heading"><div><span class="svc-eyebrow">PICK A SERVICE</span><h2>Available near you</h2></div><a class="svc-track-link" href="{{ url_for('student_services_page', category='requests') }}">Track my requests →</a></div>
     <section class="svc-grid">
-        {% for service in services %}<article class="svc-card">
-            <h2>{{ service.name }}</h2><p class="svc-muted">{{ service.description or 'Campus service available for students.' }}</p>
-            <p class="svc-muted">{{ service.shop_name or service.provider_name or 'Campus service provider' }}{% if service.shop_address %}<br>{{ service.shop_address }}{% endif %}</p>
-            <div class="svc-price">₹{{ '%.2f'|format(service.price or 0) }} <span class="svc-muted">· about {{ service.estimated_minutes or 30 }} min</span></div>
-            <form class="svc-form" method="post" action="{{ url_for('book_service', service_id=service.id) }}">
+        {% for service in services %}
+        <article class="svc-card">
+            <header class="svc-card-head"><div><h2>{{ service.name }}</h2><p class="svc-muted svc-provider">{{ service.shop_name or service.provider_name or 'HostelHub service provider' }}{% if service.shop_address %} · {{ service.shop_address }}{% endif %}</p></div><span class="svc-time">{{ service.estimated_minutes or 30 }} min</span></header>
+            <p class="svc-card-description">{{ service.description or 'Select the tasks you need; the estimate updates as you choose.' }}</p>
+            <form class="svc-form" method="post" action="{{ url_for('book_service', service_id=service.id) }}" data-service-form>
+                {% if service.option_rates %}
+                <fieldset style="border:0;margin:0;padding:0">
+                    <legend class="svc-rate-title">Choose items · price per unit</legend>
+                    <div class="svc-rate-list">
+                        {% for option in service.option_rates %}
+                        <div class="svc-rate-option">
+                            <div><span class="svc-rate-name">{{ option.name }}</span><span class="svc-rate-unit">₹{{ '%.2f'|format(option.price) }} / {{ option.unit or 'unit' }}</span></div>
+                            <div><span class="svc-rate-price">Qty</span><div class="svc-qty"><button type="button" data-qty-step="-1" aria-label="Decrease {{ option.name }} quantity">−</button><input type="number" name="item_qty_{{ loop.index0 }}" min="0" max="99" value="0" data-rate="{{ option.price }}" aria-label="{{ option.name }} quantity"><button type="button" data-qty-step="1" aria-label="Increase {{ option.name }} quantity">+</button></div></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                {% endif %}
                 <label>Preferred date &amp; time (optional)<input type="datetime-local" name="preferred_at"></label>
-                <label>Request details *<textarea name="details" required maxlength="1200" placeholder="Tell the provider what you need"></textarea></label>
-                <button class="svc-btn" type="submit">Request this service</button>
+                <label>Extra instructions (optional)<textarea name="details" maxlength="1200" placeholder="{% if category == 'laundry' %}Pickup location, detergent preference or stain notes{% elif category == 'printing' %}File name, paper size, binding or pickup details{% elif category == 'electronics-mobile-repair' %}Device model, fault symptoms and any parts already replaced{% elif category == 'clothing-tailoring' %}Garment, fit preference and measurement notes{% else %}Add anything else the provider should know{% endif %}"></textarea></label>
+                <div class="svc-estimate"><div><small>ESTIMATED TOTAL</small><strong data-estimate>₹0.00</strong></div><span class="svc-muted" data-estimate-count>0 items</span></div>
+                <p class="svc-estimate-note">{% if category == 'electronics-mobile-repair' %}Replacement parts are not included unless listed above. {% endif %}This is an estimate from the displayed rates. The provider will confirm the final price before doing the work.</p>
+                <button class="svc-btn" type="submit">Send service request <span aria-hidden="true">→</span></button>
             </form>
         </article>
-        {% else %}<p class="svc-empty">No {{ page_title|lower }} are currently available. The admin will list them here when ready.</p>{% endfor %}
+        {% else %}<div class="svc-empty"><strong>No services listed here yet</strong>The admin will publish available services on this page.</div>{% endfor %}
     </section>
-    <p style="margin-top:20px"><a class="svc-btn" href="{{ url_for('student_services_page', category='requests') }}">Track my requests →</a></p>
     {% endif %}
 </main>
+<script>
+document.querySelectorAll('[data-service-form]').forEach(function (form) {
+    const qtyInputs = Array.from(form.querySelectorAll('input[data-rate]'));
+    const total = form.querySelector('[data-estimate]');
+    const count = form.querySelector('[data-estimate-count]');
+    function updateEstimate() {
+        let amount = 0, units = 0;
+        qtyInputs.forEach(function (input) {
+            const quantity = Math.max(0, Math.min(99, parseInt(input.value, 10) || 0));
+            input.value = quantity;
+            amount += quantity * Number(input.dataset.rate || 0);
+            units += quantity;
+        });
+        total.textContent = '₹' + amount.toFixed(2);
+        count.textContent = units + (units === 1 ? ' item' : ' items');
+    }
+    qtyInputs.forEach(function (input) { input.addEventListener('input', updateEstimate); });
+    form.querySelectorAll('[data-qty-step]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const input = button.parentElement.querySelector('input');
+            input.value = String(Math.max(0, Math.min(99, (parseInt(input.value, 10) || 0) + Number(button.dataset.qtyStep))));
+            updateEstimate();
+        });
+    });
+    form.addEventListener('submit', function (event) {
+        if (qtyInputs.length && !qtyInputs.some(function (input) { return Number(input.value) > 0; }) && !form.querySelector('textarea[name="details"]').value.trim()) {
+            event.preventDefault();
+            alert('Choose at least one item or add extra instructions.');
+        }
+    });
+});
+</script>
 {% endblock %}

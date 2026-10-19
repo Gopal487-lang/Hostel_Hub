@@ -24,7 +24,7 @@
 
     <link rel="manifest"
           href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#5b4ed6">
+    <meta name="theme-color" content="#6558f5">
     <link rel="apple-touch-icon"
           href="{{ url_for('static', filename='images/hostelhub-192.png') }}">
 
@@ -68,7 +68,7 @@
             </a>
 
             <!-- Guest navigation menu; students use the dashboard's own drawer. -->
-            {% if not logged_in or session.get('role') != 'student' %}
+            {% if not logged_in or session.get('role') not in ['student', 'shopkeeper'] %}
             <button class="mobile-menu-btn"
                     id="mobileMenuBtn"
                     aria-label="Open navigation"
@@ -312,6 +312,25 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('table:not(.hub-billing-table)').forEach(function (table) {
+            const headings = Array.from(table.querySelectorAll('thead th')).map(function (cell) {
+                return cell.textContent.trim().replace(/\s+/g, ' ');
+            });
+            if (headings.length < 4) return;
+            table.classList.add('phone-card-table');
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                Array.from(row.cells).forEach(function (cell, index) {
+                    if (!cell.hasAttribute('colspan') && headings[index]) {
+                        cell.dataset.label = headings[index];
+                    }
+                });
+            });
+        });
+    });
+    </script>
 
     {% block extra_scripts %}{% endblock %}
 

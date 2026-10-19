@@ -1,6 +1,89 @@
 {% extends "provider_shell.html" %}
 {% block provider_content %}
-<section class="sk-welcome"><div><span>YOUR STORE AT A GLANCE</span><h2>Welcome, {{ session.get('user_name', 'Shopkeeper') }}!</h2><p>{% if shop %}Manage products for {{ shop.name }}. New products are reviewed by the admin before students can see them.{% else %}Your shop is not assigned yet. Ask the administrator to link your account to a shop.{% endif %}</p></div>{% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">＋ Add Product</a>{% endif %}</section>
-<section class="sk-stats"><article><span>My Products</span><strong>{{ products|length }}</strong><a href="{{ url_for('provider_products') }}">View products →</a></article><article><span>Published</span><strong>{{ products|selectattr('is_published')|list|length }}</strong><a href="{{ url_for('provider_products') }}">See status →</a></article><article><span>Waiting for approval</span><strong>{{ products|rejectattr('is_published')|list|length }}</strong><a href="{{ url_for('provider_products') }}">See status →</a></article></section>
-<section class="sk-card"><span class="sk-eyebrow">QUICK LINKS</span><h2>Manage your shop</h2><p>Use the menu to manage products, submit a new product, or check assigned services.</p><div class="sk-panel-head"><a class="sk-button" href="{{ url_for('provider_products') }}">My Products</a><a class="sk-button" href="{{ url_for('provider_add_product') }}">＋ Add Product</a><a class="sk-button" href="{{ url_for('provider_services') }}">My Services</a></div></section>
+<section class="sk-hero">
+  <div class="sk-hero-copy">
+    <span class="sk-eyebrow">SHOPKEEPER WORKSPACE</span>
+    <h2>Welcome, {{ session.get('user_name', 'Shopkeeper') }}</h2>
+    {% if shop %}
+      <p>Manage <strong>{{ shop.name }}</strong>, update product listings and review what students are ordering.</p>
+      <div class="sk-shop-meta"><span>● Store active</span>{% if shop.address %}<span>{{ shop.address }}</span>{% endif %}</div>
+    {% else %}
+      <p>Your shop is not linked yet. Ask an administrator to assign an active shop to your account.</p>
+      <div class="sk-shop-meta"><span class="sk-shop-unassigned">Shop assignment needed</span></div>
+    {% endif %}
+  </div>
+  <div class="sk-hero-actions">
+    {% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">＋ Add a product</a>{% endif %}
+    <a class="sk-button sk-button-light" href="{{ url_for('provider_products') }}">View inventory</a>
+  </div>
+</section>
+
+{% if app_updates %}
+<section class="sk-app-updates" aria-label="HostelHub app updates">
+  <div><span class="sk-eyebrow">HOSTELHUB APP UPDATES</span><h2>What's new</h2></div>
+  <div class="sk-app-update-list">
+    {% for update in app_updates %}
+    <article><span class="sk-app-update-version">{{ ('Version ' ~ update.version) if update.version else 'APP UPDATE' }}</span><h3>{{ update.title }}</h3><p>{{ update.body }}</p><small>{{ update.created_at }}</small></article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="sk-metric-grid" aria-label="Store summary">
+  <article class="sk-metric"><span class="sk-metric-icon purple">▣</span><div><small>All products</small><strong>{{ product_stats.total }}</strong></div><a href="{{ url_for('provider_products') }}">Open inventory <span>→</span></a></article>
+  <article class="sk-metric"><span class="sk-metric-icon green">✓</span><div><small>Published</small><strong>{{ product_stats.published }}</strong></div><p>Visible in the marketplace</p></article>
+  <article class="sk-metric"><span class="sk-metric-icon amber">◷</span><div><small>Awaiting review</small><strong>{{ product_stats.pending }}</strong></div><p>Admin approval required</p></article>
+  <article class="sk-metric"><span class="sk-metric-icon coral">!</span><div><small>Low stock</small><strong>{{ product_stats.low_stock }}</strong></div><p>Published products with 5 or fewer</p></article>
+</section>
+
+<section class="sk-dashboard-grid">
+  <article class="sk-dashboard-card sk-inventory-card">
+    <div class="sk-section-heading"><div><span class="sk-eyebrow">INVENTORY</span><h2>Recently added products</h2><p>Check image, stock and publication status at a glance.</p></div><a href="{{ url_for('provider_products') }}">All products <span>→</span></a></div>
+    {% if products %}
+      <div class="sk-product-list">
+        {% for product in products[:4] %}
+        <div class="sk-product-row">
+          {% if product.image_url %}<img class="sk-product-image" src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="sk-product-placeholder" {% if product.image_url %}hidden{% endif %}>▣</span>{% else %}<span class="sk-product-placeholder">▣</span>{% endif %}
+          <div class="sk-product-info"><strong>{{ product.name }}</strong><small>{{ product.category_name or 'Uncategorized' }} · ₹{{ '%.2f'|format(product.price or 0) }}</small></div>
+          <div class="sk-product-stock"><small>Stock</small><strong class="{{ 'is-low' if (product.stock_quantity or 0) <= 5 else '' }}">{{ product.stock_quantity or 0 }}</strong></div>
+          {% if product.is_published %}<span class="sk-status published">Live</span>{% else %}<span class="sk-status pending">Review</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="sk-empty"><span>▣</span><h3>Your store starts here</h3><p>Add your first product and send it to the admin for approval.</p>{% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">＋ Add your first product</a>{% endif %}</div>
+    {% endif %}
+  </article>
+
+  <article class="sk-dashboard-card sk-orders-card">
+    <div class="sk-section-heading"><div><span class="sk-eyebrow">STUDENT ACTIVITY</span><h2>Recent orders</h2><p>Latest orders that contain your products.</p></div></div>
+    {% if recent_orders %}
+      <div class="sk-order-list">
+        {% for order in recent_orders %}
+        <div class="sk-order-row"><span class="sk-order-icon">🛍️</span><div class="sk-order-info"><strong>Order #{{ order.id }}</strong><small>{{ order.item_count }} item{{ '' if order.item_count == 1 else 's' }} · {{ order.created_at }}</small></div><div class="sk-order-total"><strong>₹{{ '%.2f'|format(order.order_total or 0) }}</strong><span class="sk-order-state">{{ order.status or 'Pending' }}</span></div></div>
+        {% endfor %}
+      </div>
+      <p class="sk-note">Order changes and payment verification are managed by the administrator.</p>
+    {% else %}
+      <div class="sk-empty sk-empty-small"><span>🛍️</span><h3>No orders yet</h3><p>Orders containing your published products will appear here.</p></div>
+    {% endif %}
+  </article>
+</section>
+
+<section class="sk-bottom-grid">
+  <article class="sk-dashboard-card sk-shortcuts">
+    <div class="sk-section-heading"><div><span class="sk-eyebrow">QUICK ACTIONS</span><h2>Keep your shop moving</h2></div></div>
+    <div class="sk-action-grid">
+      {% if shop %}<a href="{{ url_for('provider_add_product') }}"><span class="sk-action-icon purple">＋</span><span><strong>Add product</strong><small>Submit a listing for review</small></span><b>→</b></a>{% endif %}
+      <a href="{{ url_for('provider_products') }}"><span class="sk-action-icon green">▣</span><span><strong>Manage inventory</strong><small>Review stock and approval status</small></span><b>→</b></a>
+    </div>
+  </article>
+</section>
+
+<style>
+.sk-dashboard .sk-content{max-width:1450px;padding:28px 34px}.sk-dashboard .sk-button{padding:12px 16px;border-radius:11px;background:var(--hh-primary);box-shadow:0 8px 20px #11112625}.sk-dashboard .sk-hero-actions .sk-button-light{background:#ffffffeb;color:#2b2455}.sk-dashboard .sk-hero-actions .sk-button-light:hover{background:white;color:#211842}.sk-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:190px;padding:30px 34px;border-radius:22px;overflow:hidden;background:linear-gradient(120deg,#f0edff 0%,#faf9ff 58%,#eef5ff 100%);color:#282743}.sk-hero:after{content:"";position:absolute;width:240px;height:240px;border:1px solid #7e6bdd24;border-radius:50%;right:80px;top:-120px;box-shadow:0 0 0 28px #7e6bdd0c,0 0 0 56px #7e6bdd08;pointer-events:none}.sk-hero-copy,.sk-hero-actions{position:relative;z-index:1}.sk-hero .sk-eyebrow{color:#7258dc}.sk-hero h2{font-size:clamp(25px,3vw,36px);letter-spacing:-.6px;margin:10px 0}.sk-hero p{max-width:690px;color:#696d84;line-height:1.65;margin:0;font-size:14px}.sk-hero p strong{color:#282743}.sk-shop-meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:17px;color:#767b96;font-size:11px}.sk-shop-meta span:first-child{color:#83f0c8}.sk-shop-meta .sk-shop-unassigned{color:#ffd27e}.sk-hero-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}.sk-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.sk-metric{position:relative;display:grid;grid-template-columns:44px 1fr;align-items:center;gap:5px 12px;padding:17px 18px;border:1px solid #e7e8f2;border-radius:16px;background:#fff;box-shadow:0 8px 25px #25264a08}.sk-metric-icon,.sk-action-icon{display:grid;place-items:center;border-radius:13px;font-weight:800}.sk-metric-icon{grid-row:1/3;width:44px;height:44px;font-size:19px}.sk-metric-icon.purple,.sk-action-icon.purple{background:#eeeaff;color:var(--hh-primary)}.sk-metric-icon.green,.sk-action-icon.green{background:#e1f8ef;color:#13865b}.sk-metric-icon.amber,.sk-action-icon.amber{background:#fff3d8;color:#a76a04}.sk-metric-icon.coral{background:#fff0ee;color:#d95047}.sk-metric small{display:block;color:#7b7d92;font-size:11px}.sk-metric strong{display:block;margin-top:2px;font-size:27px;letter-spacing:-.5px;color:#1d2039}.sk-metric>a,.sk-metric>p{grid-column:2;margin:4px 0 0;color:#77798e;text-decoration:none;font-size:10px}.sk-metric>a{color:var(--hh-primary-dark);font-weight:700}.sk-metric>a span{float:right}.sk-dashboard-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(310px,.85fr);gap:16px}.sk-bottom-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}.sk-dashboard-card{min-width:0;padding:21px 22px;border:1px solid #e6e8f1;border-radius:17px;background:#fff;box-shadow:0 8px 25px #25264a08}.sk-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}.sk-section-heading h2{margin:5px 0 3px;font-size:18px;color:#20223c;letter-spacing:-.2px}.sk-section-heading p{margin:0;color:#85869a;font-size:11px}.sk-section-heading>a{margin-top:8px;color:var(--hh-primary-dark);text-decoration:none;font-weight:700;font-size:11px;white-space:nowrap}.sk-product-list,.sk-order-list{display:grid}.sk-product-row{display:grid;grid-template-columns:48px minmax(100px,1fr) 48px auto;align-items:center;gap:11px;padding:12px 0;border-top:1px solid #eff0f5}.sk-product-image,.sk-product-placeholder{width:48px;height:48px;border-radius:12px;object-fit:cover;background:#f1f1f9}.sk-product-placeholder{display:grid;place-items:center;color:#8c7ce0;font-size:19px}.sk-product-info{min-width:0}.sk-product-info strong,.sk-product-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sk-product-info strong{font-size:12px;color:#252740}.sk-product-info small{margin-top:5px;font-size:10px;color:#85869a}.sk-product-stock{text-align:center}.sk-product-stock small,.sk-product-stock strong{display:block}.sk-product-stock small{font-size:9px;color:#88899c}.sk-product-stock strong{font-size:13px;color:#2c865f}.sk-product-stock strong.is-low{color:#d14f46}.sk-status{border-radius:20px;padding:6px 9px;font-size:9px;font-weight:800;white-space:nowrap}.sk-status.published{background:#e1f7ec;color:#187a4f}.sk-status.pending{background:#fff1d1;color:#9a6506}.sk-order-row{display:grid;grid-template-columns:37px minmax(0,1fr) auto;gap:10px;align-items:center;padding:13px 0;border-top:1px solid #eff0f5}.sk-order-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:#f0edff}.sk-order-info strong,.sk-order-info small,.sk-order-total strong,.sk-order-total span{display:block}.sk-order-info strong{font-size:12px;color:#292b44}.sk-order-info small{margin-top:4px;font-size:10px;color:#85869a}.sk-order-total{text-align:right}.sk-order-total strong{font-size:12px}.sk-order-state{margin-top:5px;font-size:9px;color:#6d59d0;font-weight:700}.sk-note{margin:13px 0 0;padding:10px 11px;border-radius:10px;background:#f5f3ff;color:#665d91;font-size:10px;line-height:1.5}.sk-empty{padding:26px 10px;text-align:center;color:#85869a}.sk-empty>span{font-size:25px}.sk-empty h3{margin:9px 0 6px;color:#282a43;font-size:14px}.sk-empty p{margin:0 auto 13px;max-width:340px;font-size:11px;line-height:1.5}.sk-empty-small{padding:22px 10px}.sk-action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.sk-action-grid>a{display:grid;grid-template-columns:37px minmax(0,1fr) 12px;align-items:center;gap:9px;padding:13px 11px;border:1px solid #ececf3;border-radius:13px;text-decoration:none;transition:transform .16s ease,border-color .16s ease}.sk-action-grid>a:hover{transform:translateY(-2px);border-color:#c9c1fa}.sk-action-icon{width:37px;height:37px;font-size:17px}.sk-action-grid strong,.sk-action-grid small{display:block}.sk-action-grid strong{font-size:10px;color:#272942}.sk-action-grid small{margin-top:4px;color:#85869a;font-size:9px;line-height:1.4}.sk-action-grid b{color:#7865d5}
+.sk-app-updates{margin:16px 0;padding:18px;border:1px solid #e3ddfa;border-radius:16px;background:linear-gradient(120deg,#faf9ff,#f0edff)}.sk-app-updates>div:first-child{margin-bottom:12px}.sk-app-updates h2{margin:5px 0;color:#292744;font-size:17px}.sk-app-update-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px}.sk-app-update-list article{padding:13px;border:1px solid #e8e4f4;border-radius:12px;background:#fff}.sk-app-update-version{display:inline-flex;padding:4px 8px;border-radius:999px;background:#eeeaff;color:#644bc5;font-size:9px;font-weight:800}.sk-app-update-list h3{margin:9px 0 6px;color:#292744;font-size:13px}.sk-app-update-list p{margin:0;color:#676980;font-size:11px;line-height:1.6;white-space:pre-wrap}.sk-app-update-list small{display:block;margin-top:9px;color:#8b8ca0;font-size:9px}
+@media(max-width:1050px){.sk-dashboard .sk-content{padding:22px}.sk-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sk-dashboard-grid,.sk-bottom-grid{grid-template-columns:1fr}.sk-action-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.sk-dashboard .sk-content{padding:15px}.sk-hero{align-items:flex-start;flex-direction:column;padding:23px 20px;min-height:0}.sk-hero-actions{justify-content:flex-start}.sk-hero:after{right:-110px;top:-110px}.sk-metric-grid{gap:9px}.sk-metric{padding:13px 11px;grid-template-columns:36px 1fr;gap:4px 8px}.sk-metric-icon{width:36px;height:36px}.sk-metric strong{font-size:23px}.sk-metric small{font-size:10px}.sk-metric>a,.sk-metric>p{font-size:9px}.sk-dashboard-card{padding:16px 14px}.sk-product-row{grid-template-columns:40px minmax(0,1fr) 36px auto;gap:7px}.sk-product-image,.sk-product-placeholder{width:40px;height:40px}.sk-product-info small{font-size:9px}.sk-status{padding:5px 7px;font-size:8px}.sk-action-grid{grid-template-columns:1fr}.sk-action-grid>a{padding:11px}.sk-section-heading h2{font-size:16px}}
+</style>
 {% endblock %}

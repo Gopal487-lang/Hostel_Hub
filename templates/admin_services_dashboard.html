@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Services Dashboard | HostelHub{% endblock %}
+{% block content %}
+<style>
+.services-admin{max-width:1440px;margin:0 auto;padding:26px 22px 48px;color:#20243a}.sa-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}.sa-head h1{margin:0 0 6px;font-size:30px}.sa-head p{margin:0;color:#727991}.sa-actions{display:flex;gap:9px;flex-wrap:wrap}.sa-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 15px;border-radius:11px;text-decoration:none;font-weight:700;background:var(--hh-primary);color:#fff;border:1px solid var(--hh-primary)}.sa-btn.light{background:#fff;color:var(--hh-primary-dark);border-color:#dedbfa}.sa-stats{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:13px;margin:22px 0}.sa-stat,.sa-panel{background:#fff;border:1px solid #e7e9f1;border-radius:16px;box-shadow:0 7px 24px #1b25520a}.sa-stat{padding:18px}.sa-stat span{display:block;color:#737a91;font-size:13px}.sa-stat strong{display:block;margin-top:8px;font-size:27px;color:#242744}.sa-stat em{font-style:normal;font-size:22px;margin-right:6px}.sa-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.sa-panel{padding:20px;min-width:0}.sa-panel h2{margin:0;font-size:19px}.sa-sub{margin:5px 0 16px;color:#7b8196;font-size:13px}.sa-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}.sa-scroll{overflow:auto}.sa-table{width:100%;border-collapse:collapse;min-width:540px}.sa-table th,.sa-table td{text-align:left;padding:12px 10px;border-bottom:1px solid #edf0f5;vertical-align:top;font-size:13px}.sa-table th{color:#777e93;font-size:11px;letter-spacing:.04em;text-transform:uppercase}.sa-table tr:last-child td{border-bottom:0}.sa-muted{color:#83899d;font-size:12px;margin-top:4px}.sa-pill{display:inline-block;padding:5px 9px;border-radius:99px;background:#e9f7ef;color:#19764b;font-size:11px;font-weight:750}.sa-pill.off{background:#f1f2f6;color:#73798b}.sa-pill.pending{background:#fff4df;color:#9b6500}.sa-list{display:grid;gap:10px}.sa-provider{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 13px;border:1px solid #edf0f5;border-radius:12px}.sa-provider strong{display:block}.sa-provider .sa-muted{overflow-wrap:anywhere}.sa-empty{text-align:center;padding:24px;color:#858ba0}.sa-wide{grid-column:1/-1}.sa-status{font-weight:700}.sa-status.pending{color:#a36b00}.sa-status.completed{color:#16804f}.sa-status.cancelled{color:#b44c5b}
+@media(max-width:900px){.sa-stats{grid-template-columns:repeat(2,minmax(130px,1fr))}.sa-grid{grid-template-columns:1fr}}
+@media(max-width:540px){.services-admin{padding:18px 13px 35px}.sa-head h1{font-size:25px}.sa-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.sa-stat{padding:14px}.sa-stat strong{font-size:23px}.sa-panel{padding:15px}.sa-wide{grid-column:auto}.sa-actions{width:100%}.sa-btn{flex:1}}
+</style>
+<main class="services-admin">
+    <header class="sa-head">
+        <div><h1>🛠️ Services Dashboard</h1><p>Service catalogue, providers, rates and student requests in one place.</p></div>
+        <nav class="sa-actions" aria-label="Service management actions">
+            <a class="sa-btn" href="{{ url_for('admin_services') }}">Manage services &amp; rates</a>
+            <a class="sa-btn light" href="{{ url_for('admin_users') }}">Manage provider accounts</a>
+        </nav>
+    </header>
+
+    <section class="sa-stats" aria-label="Service overview">
+        <article class="sa-stat"><span><em>🧰</em> All services</span><strong>{{ stats.services }}</strong></article>
+        <article class="sa-stat"><span><em>✅</em> Available</span><strong>{{ stats.available }}</strong></article>
+        <article class="sa-stat"><span><em>📋</em> Total requests</span><strong>{{ stats.bookings }}</strong></article>
+        <article class="sa-stat"><span><em>⏳</em> Pending requests</span><strong>{{ stats.pending }}</strong></article>
+    </section>
+
+    <div class="sa-grid">
+        <section class="sa-panel">
+            <div class="sa-panel-head"><h2>Service catalogue</h2><a class="sa-btn light" href="{{ url_for('admin_services') }}">Edit catalogue</a></div>
+            <p class="sa-sub">Categories, provider assignment, base prices and availability.</p>
+            <div class="sa-scroll"><table class="sa-table"><thead><tr><th>Service</th><th>Provider</th><th>Base price</th><th>Item rates</th><th>Availability</th></tr></thead><tbody>
+                {% for service in services %}<tr><td><strong>{{ service.name }}</strong><div class="sa-muted">{{ service.category_name or 'Uncategorised' }} · {{ service.estimated_minutes }} min</div></td><td>{{ service.provider_name or 'Unassigned' }}</td><td>₹{{ '%.2f'|format(service.price or 0) }}</td><td>{% if service.rates %}{% for rate in service.rates %}<div>{{ rate.name }} · ₹{{ '%.2f'|format(rate.price) }}</div>{% endfor %}{% else %}<span class="sa-muted">No item rates</span>{% endif %}</td><td><span class="sa-pill {{ '' if service.is_available else 'off' }}">{{ 'Available' if service.is_available else 'Hidden' }}</span></td></tr>
+                {% else %}<tr><td colspan="5" class="sa-empty">No services listed. Add your first service from Manage services &amp; rates.</td></tr>{% endfor %}
+            </tbody></table></div>
+        </section>
+
+        <section class="sa-panel">
+            <div class="sa-panel-head"><h2>Service providers</h2><a class="sa-btn light" href="{{ url_for('admin_users') }}">Accounts</a></div>
+            <p class="sa-sub">Provider accounts with assigned services and request totals.</p>
+            <div class="sa-list">{% for provider in providers %}<article class="sa-provider"><div><strong>{{ provider.full_name }} {% if not provider.is_active %}<span class="sa-pill off">Inactive</span>{% endif %}</strong><div class="sa-muted">{{ provider.email }}</div></div><div><strong>{{ provider.service_count }} services</strong><div class="sa-muted">{{ provider.booking_count }} requests</div></div></article>
+                {% else %}<div class="sa-empty">No provider accounts yet. Create provider accounts in User Management.</div>{% endfor %}</div>
+        </section>
+
+        <section class="sa-panel sa-wide">
+            <div class="sa-panel-head"><h2>Recent service requests</h2><a class="sa-btn light" href="{{ url_for('admin_services') }}">Open request management</a></div>
+            <p class="sa-sub">Latest bookings, estimates and assigned providers.</p>
+            <div class="sa-scroll"><table class="sa-table"><thead><tr><th>Request</th><th>Student</th><th>Provider</th><th>Estimate</th><th>Status</th><th>Requested</th></tr></thead><tbody>
+                {% for booking in bookings %}<tr><td><strong>#{{ booking.id }} · {{ booking.service_name }}</strong><div class="sa-muted">{{ booking.details|truncate(130) }}</div></td><td>{{ booking.student_name }}</td><td>{{ booking.provider_name or 'Unassigned' }}</td><td>₹{{ '%.2f'|format(booking.estimated_cost or 0) }}</td><td><span class="sa-status {{ booking.status|lower|replace(' ', '-') }}">{{ booking.status }}</span></td><td>{{ booking.created_at or '—' }}</td></tr>
+                {% else %}<tr><td colspan="6" class="sa-empty">No service requests yet.</td></tr>{% endfor %}
+            </tbody></table></div>
+        </section>
+    </div>
+</main>
+{% endblock %}

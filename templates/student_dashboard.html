@@ -117,7 +117,7 @@
 }
 
 .hub-home-view-product {
-    color: var(--primary-color, #4f46e5);
+    color: var(--primary-color, var(--hh-primary));
     font-size: 12px;
     font-weight: 700;
     text-decoration: none;
@@ -238,7 +238,7 @@
     padding: 12px 18px;
     border: none;
     border-radius: 12px;
-    background: #4f46e5;
+    background: var(--hh-primary);
     color: #ffffff;
     text-decoration: none;
     font-size: 13px;
@@ -248,7 +248,7 @@
 }
 
 .hub-cart-product .hub-outline-btn:hover {
-    background: #3730a3;
+    background: var(--hh-primary-dark);
     transform: translateY(-2px);
 }
 
@@ -281,7 +281,7 @@
     margin-top: 12px;
     padding: 13px 22px;
     border-radius: 12px;
-    background: #4f46e5;
+    background: var(--hh-primary);
     color: #ffffff;
     text-decoration: none;
     font-weight: 700;
@@ -289,7 +289,7 @@
 }
 
 .hub-cart-section a.hub-outline-btn:hover {
-    background: #3730a3;
+    background: var(--hh-primary-dark);
     transform: translateY(-3px);
 }
 
@@ -559,7 +559,7 @@
             <button class="hub-nav-item" data-section="medical"><span>🏥</span> Medical & Health</button>
             <button class="hub-nav-item" data-section="services"><span>⚙</span> Services</button>
             <a class="hub-nav-item" href="{{ url_for('my_orders') }}" style="text-decoration:none;"><span>▤</span> My Orders</a>
-            <button class="hub-nav-item" data-section="complaints"><span>🏠</span> Hostel & Mess Services</button>
+            <button class="hub-nav-item" data-section="complaints"><span>🛟</span> Product & Service Support</button>
             <button class="hub-nav-item" data-section="updates"><span>♧</span> Updates</button>
             <button class="hub-nav-item" data-section="account"><span>♙</span> My Account</button>
             
@@ -570,9 +570,9 @@
                 <span>✦</span>
                 <strong>Need assistance?</strong>
                 <p>We're here to help you.</p>
-                <button data-open-section="complaints">Get Help →</button>
+                <button data-open-section="complaints">Report an Issue →</button>
             </div>
-            <a class="hub-logout" href="{{ url_for('logout') }}">↪ &nbsp; Logout</a>
+            <a class="hub-logout" href="{{ url_for('logout') }}" aria-label="Log out of your account"><span class="hub-logout-icon" aria-hidden="true">↪</span><span class="hub-logout-text">Logout</span></a>
         </div>
     </aside>
 
@@ -596,7 +596,7 @@
                     <input id="hubSearch" type="search" placeholder="Search products & services...">
                     <kbd>⌕</kbd>
                 </label>
-                <button class="hub-icon-btn" data-open-section="shopping" title="Shopping cart">🛒</button>
+                <a class="hub-icon-btn" href="{{ url_for('my_cart') }}" title="Open shopping cart" aria-label="Open shopping cart">🛒</a>
                 <button class="hub-icon-btn hub-notification-btn" data-open-section="updates" title="Notifications">♧<i></i></button>
                 <button class="hub-top-avatar" data-open-section="account">{{ session.get('user_name', 'S')[0]|upper }}</button>
             </div>
@@ -774,10 +774,8 @@
                     <button class="hub-category-card" data-open-section="shopping"><span class="hub-category-icon purple">🛍️</span><strong>Shopping</strong><small>Products, food & cart</small><span class="hub-card-arrow">↗</span></button>
                     <button class="hub-category-card" data-open-section="services"><span class="hub-category-icon blue">🛠️</span><strong>Services</strong><small>Print, laundry & repairs</small><span class="hub-card-arrow">↗</span></button>
                     <a class="hub-category-card" href="{{ url_for('my_orders') }}" style="text-decoration:none;color:inherit;"><span class="hub-category-icon green">📦</span><strong>My Orders</strong><small>Track your purchases</small><span class="hub-card-arrow">↗</span></a>
-                    <button class="hub-category-card" data-open-section="complaints"><span class="hub-category-icon orange">🏠</span><strong>Hostel & Mess Services</strong><small>Wi-Fi, room, mess and quality issues</small><span class="hub-card-arrow">↗</span></button>
+                    <button class="hub-category-card" data-open-section="complaints"><span class="hub-category-icon orange">🛟</span><strong>Product &amp; Service Support</strong><small>Get help with products, orders, payments or bookings</small><span class="hub-card-arrow">↗</span></button>
                     <button class="hub-category-card" data-open-section="updates"><span class="hub-category-icon pink">🔔</span><strong>Updates</strong><small>Notices & notifications</small><span class="hub-card-arrow">↗</span></button>
-                    <button class="hub-category-card" data-open-section="hostel-mess"><span class="hub-category-icon green">🍽️</span><strong>Mess Menu</strong><small>Weekly meals & timings</small><span class="hub-card-arrow">↗</span></button>
-                    <button class="hub-category-card" data-open-section="hostel-room"><span class="hub-category-icon cyan">🛏️</span><strong>Room Details</strong><small>Your current hostel room</small><span class="hub-card-arrow">↗</span></button>
                 </div>
 
 <div class="hub-section-heading hub-products-heading">
@@ -844,17 +842,20 @@
                     ₹{{ "%.2f"|format(product['price']) }}
                 </span>
 
-                <a
-                    href="{{ url_for('product_details', product_id=product['id']) }}"
-                    class="hub-home-view-product"
-                >
-                    View Product →
+                <a href="{{ url_for('product_details', product_id=product['id']) }}" class="hub-home-view-product hub-home-details">
+                    See details <span aria-hidden="true">↗</span>
                 </a>
 
             </div>
 
             <div class="hub-home-shop-name">
                 🏪 {{ product['shop_name'] or 'Campus Shop' }}
+            </div>
+
+            <div class="hub-dashboard-product-actions">
+                <button type="button" class="hub-dashboard-add-cart" data-dashboard-cart="{{ product['id'] }}">🛒 <span>Add to cart</span></button>
+                <a class="hub-dashboard-buy-now" href="{{ url_for('checkout', buy_now=product['id']) }}">⚡ <span>Buy now</span></a>
+                <span class="hub-dashboard-cart-feedback" aria-live="polite"></span>
             </div>
 
         </div>
@@ -964,20 +965,39 @@
         </button>
     </div>
 
-    <!-- Product Heading -->
-    
-</div>
+    <div class="hub-section-heading hub-products-heading">
+        <div><span class="hub-eyebrow">AVAILABLE NOW</span><h2>Products</h2><p>Published products that are currently in stock.</p></div>
+        <a class="hub-text-btn" href="{{ url_for('marketplace') }}" style="text-decoration:none">Open marketplace →</a>
+    </div>
 
-
-
-
-</div>
-
-    
-</div>
-
-
-</div>
+    {% if products %}
+    <div class="hub-home-products">
+        {% for product in products %}
+        <article class="hub-home-product-card">
+            <a href="{{ url_for('product_details', product_id=product['id']) }}" class="hub-home-product-image">
+                <div class="hub-image-placeholder" aria-hidden="true"><span>{{ '🍔' if 'food' in (product['category_name'] or '')|lower else '🛍️' }}</span><small>{{ product['category_name'] or 'Campus find' }}</small></div>
+                {% if product['image_url'] %}<img src="{{ product['image_url'] }}" alt="{{ product['name'] }}" loading="lazy" onerror="this.classList.add('hub-image-error')">{% endif %}
+                <span class="hub-product-badge">Available</span>
+            </a>
+            <div class="hub-home-product-info">
+                <span class="hub-home-product-category">{{ product['category_name'] or 'General' }}</span>
+                <h3><a href="{{ url_for('product_details', product_id=product['id']) }}">{{ product['name'] }}</a></h3>
+                <p class="hub-home-product-description">{{ product['description'] or 'Discover this product on HostelHub.' }}</p>
+                <div class="hub-home-product-bottom"><span class="hub-home-product-price">₹{{ '%.2f'|format(product['price'] or 0) }}</span><a class="hub-home-view-product hub-home-details" href="{{ url_for('product_details', product_id=product['id']) }}">See details <span aria-hidden="true">↗</span></a></div>
+                <div class="hub-home-shop-name">🏪 {{ product['shop_name'] or 'Campus Shop' }}</div>
+                <div class="hub-dashboard-product-actions">
+                    <button type="button" class="hub-dashboard-add-cart" data-dashboard-cart="{{ product['id'] }}">🛒 <span>Add to cart</span></button>
+                    <a class="hub-dashboard-buy-now" href="{{ url_for('checkout', buy_now=product['id']) }}">⚡ <span>Buy now</span></a>
+                    <span class="hub-dashboard-cart-feedback" aria-live="polite"></span>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="hub-empty-state"><span>🛍️</span><h3>No products available yet</h3><p>Products appear here after a shop adds them, stock is available and an admin publishes them.</p><a class="hub-outline-btn" href="{{ url_for('marketplace') }}">Visit Marketplace</a></div>
+    {% endif %}
+</section>
 
 <div id="hubSearchMessage" class="hub-search-message" aria-live="polite"></div>
 
@@ -1070,22 +1090,6 @@
 
 </section>
 
-    <!-- Product Cards -->
-    {% if products %}
-   
-    {% else %}
-    <div class="hub-empty-state">
-        <span>🛍️</span>
-        <h3>No products available yet</h3>
-        <p>Products will appear here when a shop adds them to the HostelHub marketplace.</p>
-    </div>
-    {% endif %}
-</section>
-<div id="hubShoppingHome">
-    </div>
-
-<div id="hubProductsPage" hidden></div>
-
 <section class="hub-section" id="section-services">
                 <div class="hub-page-heading"><span class="hub-eyebrow">EVERYDAY CONVENIENCE</span><h1>Services</h1><p>Hostel essentials, without the hassle.</p></div>
                 <div class="hub-category-grid">
@@ -1158,46 +1162,24 @@
 </section>
 
             <section class="hub-section" id="section-complaints">
-                <div class="hub-page-heading"><span class="hub-eyebrow">HOSTEL SUPPORT & INFORMATION</span><h1>Hostel &amp; Mess Services</h1><p>Choose a section to view your hostel information.</p></div>
-                <div class="hub-category-grid">
-                    <button class="hub-category-card" data-open-section="hostel-room"><span class="hub-category-icon cyan">🛏️</span><strong>Room Details</strong><small>Your current hostel room</small></button>
-                    <button class="hub-category-card" data-open-section="hostel-mess"><span class="hub-category-icon green">🍽️</span><strong>Mess Schedule</strong><small>This week's meals</small></button>
-                    <button class="hub-category-card" data-open-section="hostel-requests"><span class="hub-category-icon orange">🧰</span><strong>Service Requests</strong><small>Report an issue and see updates</small></button>
-                    <button class="hub-category-card" data-open-section="hostel-notices"><span class="hub-category-icon purple">📢</span><strong>Notices</strong><small>Updates from your warden</small></button>
+                <div class="hub-page-heading"><span class="hub-eyebrow">HOSTELHUB SUPPORT</span><h1>Product &amp; Service Support</h1><p>Report an issue with a product, order, payment, delivery or service booked through HostelHub.</p></div>
+                <div class="hub-category-grid hub-complaint-topics">
+                    <div class="hub-category-card"><span class="hub-category-icon orange">📦</span><strong>Product or order</strong><small>Damaged, missing, incorrect or poor-quality item</small></div>
+                    <div class="hub-category-card"><span class="hub-category-icon purple">🛠</span><strong>Service booking</strong><small>Booking, service quality, timing or cancellation</small></div>
+                    <div class="hub-category-card"><span class="hub-category-icon blue">💳</span><strong>Payment or refund</strong><small>Payment status, duplicate charge or refund query</small></div>
+                    <div class="hub-category-card"><span class="hub-category-icon cyan">🤝</span><strong>Provider support</strong><small>Shop or service-provider communication and conduct</small></div>
                 </div>
-            </section>
-
-            <section class="hub-section" id="section-hostel-room">
-                <button class="hub-outline-btn" data-open-section="complaints">← Hostel &amp; Mess Services</button>
-                <div class="hub-page-heading"><span class="hub-eyebrow">ROOM ALLOCATION</span><h1>Your Hostel Room</h1></div>
-                <div class="hub-panel">{% if student_room %}<div class="hub-hostel-room-card"><div><small>ASSIGNED ROOM</small><strong>{{ student_room.room_number }}</strong></div><p>{{ student_room.room_type or 'Standard room' }}{% if student_room.floor %} · {{ student_room.floor }}{% endif %}</p></div>{% else %}<div class="hub-empty-state"><span>🛏️</span><h3>Room not assigned yet</h3><p>Your room details will appear here as soon as the warden assigns a room.</p></div>{% endif %}</div>
-            </section>
-
-            <section class="hub-section" id="section-hostel-mess">
-                <button class="hub-outline-btn" data-open-section="complaints">← Hostel &amp; Mess Services</button>
-                <div class="hub-page-heading"><span class="hub-eyebrow">THIS WEEK</span><h1>Mess Schedule</h1><p>{{ mess_week_start.strftime('%d %b') }} – {{ mess_week_end.strftime('%d %b %Y') }}</p></div>
-                <div class="hub-mess-grid">{% for day in mess_week_dates %}<article class="hub-mess-day"><h3>{{ day.strftime('%A') }} <small>{{ day.strftime('%d %b') }}</small></h3>{% for meal in meals %}<p><strong>{{ meal }}:</strong> {{ mess_menu.get((day.isoformat(), meal), 'Menu not published') or 'Menu not published' }}</p>{% endfor %}</article>{% endfor %}</div>
-            </section>
-
-            <section class="hub-section" id="section-hostel-requests">
-                <button class="hub-outline-btn" data-open-section="complaints">← Hostel &amp; Mess Services</button>
-                <div class="hub-page-heading"><span class="hub-eyebrow">ASK THE WARDEN</span><h1>Service Requests</h1><p>Report a hostel or mess issue and track its status here.</p></div>
-                <div class="hub-panel"><h2>Request a service or report an issue</h2>
+                <div class="hub-panel"><h2>Report an issue or share feedback</h2>
                     <form id="hubComplaintForm" class="hub-form" method="POST" action="{{ url_for('submit_student_complaint') }}">
-                        <label>Service category<select id="hubComplaintCategory" name="category" required><option value="">Select a category</option><optgroup label="Hostel"><option>Room maintenance and repairs</option><option>Wi-Fi and internet</option><option>Electricity and lighting</option><option>Water supply</option><option>Plumbing and drainage</option><option>Room and common-area cleanliness</option><option>Security and safety</option><option>Pest control</option></optgroup><optgroup label="Mess"><option>Food quality and taste</option><option>Food hygiene and cleanliness</option><option>Menu or meal timing</option><option>Mess service and staff</option></optgroup><option>Other hostel or mess issue</option></select></label>
-                        <label>Request title<input id="hubComplaintTitle" name="subject" type="text" maxlength="120" placeholder="Briefly describe what you need" required></label>
-                        <label>Details<textarea id="hubComplaintDetails" name="description" rows="4" maxlength="2000" placeholder="Tell us more so the hostel team can help..." required></textarea></label>
-                        <button type="submit" class="hub-primary-btn">Send Request →</button><p id="hubComplaintMessage" class="hub-form-message"></p>
+                        <label>Issue type<select id="hubComplaintCategory" name="category" required><option value="">Choose the closest match</option><optgroup label="Products & Orders"><option>Product quality or condition</option><option>Wrong or missing product</option><option>Order status or delivery</option><option>Order cancellation or return</option></optgroup><optgroup label="Payments"><option>Payment not updated</option><option>Refund or duplicate payment</option><option>Payment instructions or QR issue</option></optgroup><optgroup label="Services"><option>Service booking or availability</option><option>Service quality or completion</option><option>Provider communication or behaviour</option><option>Service cancellation or refund</option></optgroup><optgroup label="Platform"><option>App or account issue</option><option>Suggestion or appreciation</option><option>Other product or service issue</option></optgroup></select></label>
+                        <label>Short title<input id="hubComplaintTitle" name="subject" type="text" maxlength="120" placeholder="Example: Order arrived with a damaged item" required></label>
+                        <label>Details<textarea id="hubComplaintDetails" name="description" rows="4" maxlength="2000" placeholder="Share the product or service, order reference if available, and what went wrong." required></textarea></label>
+                        <button type="submit" class="hub-primary-btn">Send to HostelHub Support →</button><p id="hubComplaintMessage" class="hub-form-message"></p>
                     </form>
                 </div>
-                {% if complaints %}<div class="hub-panel"><h2>Your requests</h2>{% for complaint in complaints %}<article class="hub-complaint-item"><strong>{{ complaint.subject }}</strong><p>{{ complaint.category }} · {{ complaint.status|title }} · {{ complaint.created_at }}</p><p>{{ complaint.description }}</p>{% if complaint.warden_reply %}<p><strong>Warden update:</strong> {{ complaint.warden_reply }}</p>{% endif %}</article>{% endfor %}</div>{% else %}<div class="hub-empty-state"><span>📝</span><h3>No requests submitted</h3><p>Your submitted requests and their status will appear here.</p></div>{% endif %}
+                {% if complaints %}<div class="hub-panel"><h2>Your support requests</h2>{% for complaint in complaints %}<article class="hub-complaint-item"><strong>{{ complaint.subject }}</strong><p>{{ complaint.category }} · {{ complaint.status|title }} · {{ complaint.created_at }}</p><p>{{ complaint.description }}</p>{% if complaint.warden_reply %}<p><strong>Support update:</strong> {{ complaint.warden_reply }}</p>{% endif %}</article>{% endfor %}</div>{% else %}<div class="hub-empty-state"><span>📝</span><h3>No support requests yet</h3><p>Your product and service reports and their status will appear here.</p></div>{% endif %}
             </section>
 
-            <section class="hub-section" id="section-hostel-notices">
-                <button class="hub-outline-btn" data-open-section="complaints">← Hostel &amp; Mess Services</button>
-                <div class="hub-page-heading"><span class="hub-eyebrow">WARDEN UPDATES</span><h1>Hostel Notices</h1><p>Announcements for your hostel.</p></div>
-                {% if hostel_notices %}<div class="hub-hostel-notice-list">{% for notice in hostel_notices %}<article class="hub-hostel-notice"><span class="hub-eyebrow">{{ notice.created_at }}</span><h2>{{ notice.title }}</h2><p>{{ notice.body }}</p></article>{% endfor %}</div>{% else %}<div class="hub-empty-state"><span>📢</span><h3>No hostel announcements</h3><p>Notices published by your warden will show up here.</p></div>{% endif %}
-            </section>
             <section class="hub-section" id="section-payments">
                 <div class="hub-page-heading">
                     <span class="hub-eyebrow">PAYMENT RECORDS</span>
@@ -1244,14 +1226,15 @@
             </section>
 
             <section class="hub-section" id="section-updates">
-                <div class="hub-page-heading"><span class="hub-eyebrow">STAY INFORMED</span><h1>Updates</h1><p>Important notices and notifications in one place.</p></div>
-                {% if hostel_notices %}<div class="hub-category-grid">{% for notice in hostel_notices %}<article class="hub-wishlist-card"><div class="hub-wishlist-info"><span class="hub-eyebrow">HOSTEL NOTICE · {{ notice.created_at }}</span><h2>{{ notice.title }}</h2><p>{{ notice.body }}</p></div></article>{% endfor %}</div>{% else %}<div class="hub-empty-state"><span>🔔</span><h3>You're all caught up</h3><p>New order updates and hostel notices will appear here.</p></div>{% endif %}
+                <div class="hub-page-heading"><span class="hub-eyebrow">STAY INFORMED</span><h1>Updates</h1><p>Important HostelHub announcements in one place.</p></div>
+                {% if app_updates %}<div class="hub-app-updates"><div class="hub-app-updates-heading"><span class="hub-eyebrow">HOSTELHUB APP</span><h2>What's new</h2></div><div class="hub-category-grid">{% for update in app_updates %}<article class="hub-app-update-card"><span class="hub-app-update-badge">{{ ('Version ' ~ update.version) if update.version else 'APP UPDATE' }}</span><h3>{{ update.title }}</h3><p>{{ update.body }}</p><small>{{ update.created_at }}</small></article>{% endfor %}</div></div>{% endif %}
+                {% if not app_updates %}<div class="hub-empty-state"><span>🔔</span><h3>You're all caught up</h3><p>New HostelHub announcements will appear here.</p></div>{% endif %}
             </section>
 
             <section class="hub-section" id="section-account">
                 <div class="hub-page-heading"><span class="hub-eyebrow">YOUR SPACE</span><h1>My Account</h1><p>Manage your account and personal preferences.</p></div>
                 <div class="hub-panel hub-profile-panel"><div class="hub-profile-avatar">{{ session.get('user_name', 'S')[0]|upper }}</div><div><span class="hub-eyebrow">STUDENT ACCOUNT</span><h2>{{ session.get('user_name', 'Student') }}</h2><p>Your HostelHub account</p></div></div>
-                <div class="hub-panel"><span class="hub-eyebrow">HOSTEL ROOM</span>{% if student_room %}<h2>Room {{ student_room.room_number }}</h2><p>{{ student_room.room_type or 'Standard room' }}{% if student_room.floor %} · Floor {{ student_room.floor }}{% endif %}</p>{% else %}<p>No room has been assigned yet. Contact your warden for an update.</p>{% endif %}</div>
+                <div class="hub-panel"><span class="hub-eyebrow">HOSTEL ROOM</span>{% if student_room %}<h2>Room {{ student_room.room_number }}</h2><p>{{ student_room.room_type or 'Standard room' }}{% if student_room.floor %} · Floor {{ student_room.floor }}{% endif %}</p>{% else %}<p>No room has been assigned yet. Contact hostel management for an update.</p>{% endif %}</div>
                 <div class="hub-category-grid">
                     <button class="hub-category-card" data-account="profile"><span class="hub-category-icon purple">👤</span><strong>Profile</strong><small>Your personal details</small></button>
                     <button class="hub-category-card" data-account="reviews"><span class="hub-category-icon orange">⭐</span><strong>Reviews & Ratings</strong><small>Your feedback</small></button>
@@ -1266,9 +1249,10 @@
 </div>
 
 <style>
-.hub-dashboard{--bg:#0b0b18;--panel:#121326;--panel2:#17182f;--border:#272744;--text:#f4f3ff;--muted:#9999b8;--purple:#9471ff;--purple2:#6e4be8;min-height:calc(100vh - 70px);background:var(--bg);color:var(--text);display:flex;border-radius:18px;overflow:hidden;font-family:inherit}
+.hub-dashboard{--bg:#f5f6fc;--panel:#ffffff;--panel2:#f7f7ff;--border:#e7e8f2;--text:#20243a;--muted:#777b96;--purple:#7055df;--purple2:#5a40cb;min-height:calc(100vh - 70px);background:var(--bg);color:var(--text);display:flex;border-radius:18px;overflow:hidden;font-family:inherit}
+.hub-icon-btn{display:grid;place-items:center;text-decoration:none}
 .hub-dashboard *{box-sizing:border-box}
-.hub-sidebar{width:248px;flex-shrink:0;background:#0e0e20;border-right:1px solid var(--border);padding:25px 15px;display:flex;flex-direction:column}
+.hub-sidebar{width:248px;flex-shrink:0;background:#ffffff;border-right:1px solid var(--border);padding:25px 15px;display:flex;flex-direction:column}
 .hub-brand{display:flex;align-items:center;gap:11px;color:var(--text);text-decoration:none;font-size:21px;font-weight:800;padding:0 8px 25px}
 .hub-brand-icon{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#a58aff,#7045ed);display:grid;place-items:center;color:white;font-size:24px;box-shadow:0 5px 22px #7e57ff45}
 .hub-brand-accent{color:#a58aff}.hub-brand small{display:block;font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:3px}
@@ -1276,18 +1260,18 @@
 .hub-avatar,.hub-top-avatar,.hub-profile-avatar{display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,#a58aff,#7045ed);color:white;font-weight:800}
 .hub-avatar{width:39px;height:39px}.hub-user-mini strong,.hub-user-mini small{display:block}.hub-user-mini strong{font-size:13px;max-width:150px;overflow:hidden;text-overflow:ellipsis}.hub-user-mini small{font-size:11px;color:var(--muted);margin-top:4px}
 .hub-nav-label,.hub-eyebrow{font-size:10px;font-weight:800;letter-spacing:1.7px;color:#a58aff}.hub-nav-label{padding:0 10px;margin:0 0 12px}
-.hub-nav{display:grid;gap:6px}.hub-nav-item{border:1px solid transparent;background:transparent;color:#aaa9c5;padding:12px 11px;border-radius:11px;display:flex;align-items:center;gap:12px;text-align:left;font:inherit;font-size:13px;cursor:pointer;transition:.2s}.hub-nav-item span{width:22px;text-align:center;font-size:19px}.hub-nav-item:hover{background:#19182f;color:white}.hub-nav-item.active{background:linear-gradient(100deg,#6e4be82c,#a58aff12);border-color:#7958dd65;color:white}.hub-nav-item.active span{color:#b19aff}
-.hub-sidebar-bottom{margin-top:auto;padding-top:28px}.hub-help-card{background:linear-gradient(145deg,#28204b,#17162b);border:1px solid #42346d;border-radius:14px;padding:16px}.hub-help-card>span{font-size:20px;color:#b29aff}.hub-help-card strong{display:block;margin-top:8px;font-size:13px}.hub-help-card p{color:var(--muted);font-size:11px}.hub-help-card button{border:0;background:none;color:#b9a5ff;font-weight:700;cursor:pointer;padding:0}.hub-logout{display:block;color:#aaa9c5;text-decoration:none;font-size:13px;padding:19px 10px 0}.hub-logout:hover{color:#ff9ba9}
-.hub-main{flex:1;min-width:0}.hub-topbar{min-height:79px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 30px}.hub-breadcrumb{font-size:12px;color:var(--muted)}.hub-breadcrumb span{padding:0 8px;color:#565574}.hub-breadcrumb strong{color:var(--text)}.hub-top-actions{display:flex;align-items:center;gap:12px}.hub-search{height:42px;display:flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:11px;background:#121326;padding:0 12px;min-width:250px}.hub-search>span{font-size:23px;color:#a58aff}.hub-search input{background:transparent;border:0;outline:0;color:white;width:100%;font:inherit;font-size:12px}.hub-search input::placeholder{color:#777795}.hub-search kbd{color:#777795}.hub-icon-btn,.hub-top-avatar{height:39px;width:39px;border:1px solid var(--border);border-radius:11px;background:#17172c;color:white;cursor:pointer}.hub-top-avatar{border:0}.hub-notification-btn{position:relative}.hub-notification-btn i{position:absolute;width:6px;height:6px;border-radius:50%;background:#c19cff;right:8px;top:7px}
+.hub-nav{display:grid;gap:6px}.hub-nav-item{border:1px solid transparent;background:transparent;color:#696d88;padding:12px 11px;border-radius:11px;display:flex;align-items:center;gap:12px;text-align:left;font:inherit;font-size:13px;cursor:pointer;transition:.2s}.hub-nav-item span{width:22px;text-align:center;font-size:19px}.hub-nav-item:hover{background:#f5f3ff;color:#403382}.hub-nav-item.active{background:linear-gradient(100deg,#f0edff,#f8f7ff);border-color:#e2dcff;color:#5541bd}.hub-nav-item.active span{color:#7258dc}
+.hub-sidebar-bottom{margin-top:auto;padding-top:22px}.hub-help-card{background:linear-gradient(145deg,#f3f0ff,#faf9ff);border:1px solid #e6e0ff;border-radius:14px;padding:16px}.hub-help-card>span{font-size:20px;color:#b29aff}.hub-help-card strong{display:block;margin-top:8px;font-size:13px}.hub-help-card p{color:var(--muted);font-size:11px}.hub-help-card button{border:0;background:none;color:#604bc7;font-weight:700;cursor:pointer;padding:0}.hub-logout{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:15px;padding:11px 14px;border:1px solid #f5d9df;border-radius:11px;background:#fff6f7;color:#b33e58;text-decoration:none;font-size:13px;font-weight:750;transition:background .18s,border-color .18s}.hub-logout:hover{background:#ffe9ed;border-color:#efbdc8;color:#9e2945}.hub-logout-icon{font-size:18px;line-height:1}.hub-logout-text{font-size:13px}
+.hub-main{flex:1;min-width:0}.hub-topbar{min-height:79px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 30px}.hub-breadcrumb{font-size:12px;color:var(--muted)}.hub-breadcrumb span{padding:0 8px;color:#565574}.hub-breadcrumb strong{color:var(--text)}.hub-top-actions{display:flex;align-items:center;gap:12px}.hub-search{height:42px;display:flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:11px;background:#f7f7fc;padding:0 12px;min-width:250px}.hub-search>span{font-size:23px;color:#a58aff}.hub-search input{background:transparent;border:0;outline:0;color:#292943;width:100%;font:inherit;font-size:12px}.hub-search input::placeholder{color:#9396aa}.hub-search kbd{color:#9396aa}.hub-icon-btn,.hub-top-avatar{height:39px;width:39px;border:1px solid var(--border);border-radius:11px;background:#ffffff;color:#55516e;cursor:pointer}.hub-top-avatar{border:0}.hub-notification-btn{position:relative}.hub-notification-btn i{position:absolute;width:6px;height:6px;border-radius:50%;background:#c19cff;right:8px;top:7px}
 .hub-content{padding:29px 30px;max-width:1400px;margin:auto}.hub-section{display:none;animation:hubFade .25s ease}.hub-section.active{display:block}@keyframes hubFade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.hub-welcome{position:relative;overflow:hidden;min-height:225px;border:1px solid #4a397c;border-radius:19px;background:radial-gradient(ellipse at 90% 20%,#714bd84d,transparent 43%),linear-gradient(115deg,#1c1935,#17162c 70%);padding:32px;display:flex;align-items:center;justify-content:space-between}
+.hub-welcome{position:relative;overflow:hidden;min-height:225px;border:1px solid #e8e1ff;border-radius:19px;background:linear-gradient(115deg,#eeeaff 0%,#f8f6ff 54%,#f0f6ff 100%);padding:32px;display:flex;align-items:center;justify-content:space-between}
 .hub-welcome h1,.hub-page-heading h1{font-size:clamp(24px,3vw,33px);letter-spacing:-1px;margin:13px 0 9px}.hub-welcome h1 span{color:#b7a1ff}.hub-welcome p,.hub-page-heading p{color:var(--muted);font-size:13px;line-height:1.7}.hub-primary-btn{border:0;border-radius:10px;padding:12px 17px;background:linear-gradient(110deg,#8e6aff,#6d48e5);color:white;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 6px 18px #704be52a;transition:.2s}.hub-primary-btn:hover{transform:translateY(-2px);box-shadow:0 9px 23px #704be54a}.hub-primary-btn span{padding-left:12px}
 .hub-welcome-art{width:180px;height:170px;position:relative;display:grid;place-items:center;flex-shrink:0}.hub-orbit{position:absolute;border:1px solid #a58aff40;border-radius:50%;transform:rotate(-25deg)}.orbit-one{width:165px;height:85px}.orbit-two{width:130px;height:145px}.hub-art-cube{width:82px;height:82px;display:grid;place-items:center;background:linear-gradient(135deg,#a58aff,#6038d0);border-radius:23px;box-shadow:0 0 45px #8965ff75;font-size:35px;font-weight:900;transform:rotate(-9deg)}.hub-art-cube span{font-size:10px;position:absolute;bottom:12px;right:14px}.hub-art-star{position:absolute;right:5px;top:15px;color:#e2d8ff;font-size:26px;animation:hubFloat 3s ease-in-out infinite}@keyframes hubFloat{50%{transform:translateY(-7px) rotate(12deg)}}
-.hub-section-heading{display:flex;justify-content:space-between;align-items:end;margin:31px 0 16px}.hub-section-heading h2{font-size:19px;margin:7px 0 0}.hub-category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:18px}.hub-category-card{position:relative;text-align:left;min-width:0;border:1px solid var(--border);background:linear-gradient(145deg,#17182e,#121324);border-radius:14px;padding:18px;color:var(--text);cursor:pointer;transition:transform .2s,border-color .2s,background .2s}.hub-category-card:hover{transform:translateY(-3px);border-color:#7958dd;background:#1b1936}.hub-category-icon{width:43px;height:43px;border-radius:12px;display:grid;place-items:center;font-size:20px;margin-bottom:15px}.purple{background:#7549e52b}.blue{background:#3988e42b}.green{background:#35c99a22}.orange{background:#ff9d5024}.pink{background:#ef65b525}.cyan{background:#37cbd022}.hub-category-card strong,.hub-category-card small{display:block}.hub-category-card strong{font-size:13px}.hub-category-card small{color:var(--muted);font-size:11px;margin-top:6px;line-height:1.5}.hub-card-arrow{position:absolute;right:16px;top:17px;color:#777495}.hub-products-heading{margin-top:35px}.hub-text-btn{background:transparent;border:0;color:#b19aff;cursor:pointer;font-weight:700;font-size:12px}
-.hub-page-heading{margin-bottom:25px}.hub-page-heading h1{margin-bottom:4px}.hub-empty-state{border:1px dashed #373451;border-radius:15px;background:#111222;padding:37px 20px;text-align:center;margin-top:20px}.hub-empty-state>span{font-size:31px}.hub-empty-state h3{font-size:16px;margin:13px 0 8px}.hub-empty-state p{font-size:12px;line-height:1.7;color:var(--muted);max-width:440px;margin:0 auto 16px}.hub-outline-btn{background:transparent;border:1px solid #6c55ad;border-radius:9px;color:#c4b3ff;padding:10px 14px;cursor:pointer}.hub-filter-row{display:flex;gap:8px;flex-wrap:wrap}.hub-filter{border:1px solid var(--border);background:#141528;color:var(--muted);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:12px}.hub-filter.active{background:#744be52b;border-color:#7755d6;color:#d4c6ff}
-.hub-panel{background:var(--panel);border:1px solid var(--border);border-radius:15px;padding:23px;margin-top:18px}.hub-panel h2{font-size:17px;margin:0 0 8px}.hub-panel>p{font-size:12px;color:var(--muted)}.hub-form{display:grid;gap:16px;margin-top:22px;max-width:700px}.hub-form label{display:grid;gap:8px;color:#c9c8df;font-size:12px}.hub-form input,.hub-form select,.hub-form textarea{width:100%;border:1px solid #32314e;border-radius:9px;background:#0d0e1d;color:white;padding:12px;font:inherit;font-size:13px;outline:none}.hub-form input:focus,.hub-form select:focus,.hub-form textarea:focus{border-color:#8e6aff}.hub-form-message{font-size:12px;color:#c3b0ff}.hub-profile-panel{display:flex;align-items:center;gap:18px}.hub-profile-avatar{width:66px;height:66px;font-size:26px}.hub-profile-panel h2{margin:6px 0}.hub-profile-panel p{margin:0;color:var(--muted);font-size:12px}.hub-footer{text-align:center;padding:20px;color:#6f6f90;font-size:11px;border-top:1px solid var(--border)}.hub-mobile-label{display:none}
+.hub-section-heading{display:flex;justify-content:space-between;align-items:end;margin:31px 0 16px}.hub-section-heading h2{font-size:19px;margin:7px 0 0}.hub-category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:18px}.hub-category-card{position:relative;text-align:left;min-width:0;border:1px solid var(--border);background:#ffffff;border-radius:14px;padding:18px;color:var(--text);cursor:pointer;transition:transform .2s,border-color .2s,background .2s}.hub-category-card:hover{transform:translateY(-3px);border-color:#cec5ff;background:#faf9ff}.hub-category-icon{width:43px;height:43px;border-radius:12px;display:grid;place-items:center;font-size:20px;margin-bottom:15px}.purple{background:#7549e52b}.blue{background:#3988e42b}.green{background:#35c99a22}.orange{background:#ff9d5024}.pink{background:#ef65b525}.cyan{background:#37cbd022}.hub-category-card strong,.hub-category-card small{display:block}.hub-category-card strong{font-size:13px}.hub-category-card small{color:var(--muted);font-size:11px;margin-top:6px;line-height:1.5}.hub-card-arrow{position:absolute;right:16px;top:17px;color:#777495}.hub-products-heading{margin-top:35px}.hub-text-btn{background:transparent;border:0;color:#7055df;cursor:pointer;font-weight:700;font-size:12px}
+.hub-page-heading{margin-bottom:25px}.hub-page-heading h1{margin-bottom:4px}.hub-empty-state{border:1px dashed #dcd9ed;border-radius:15px;background:#ffffff;padding:37px 20px;text-align:center;margin-top:20px}.hub-empty-state>span{font-size:31px}.hub-empty-state h3{font-size:16px;margin:13px 0 8px}.hub-empty-state p{font-size:12px;line-height:1.7;color:var(--muted);max-width:440px;margin:0 auto 16px}.hub-outline-btn{background:#faf9ff;border:1px solid #d9d2fa;border-radius:9px;color:#604bc7;padding:10px 14px;cursor:pointer}.hub-filter-row{display:flex;gap:8px;flex-wrap:wrap}.hub-filter{border:1px solid var(--border);background:#ffffff;color:var(--muted);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:12px}.hub-filter.active{background:#f1efff;border-color:#d5ccff;color:#5a45c0}
+.hub-panel{background:var(--panel);border:1px solid var(--border);border-radius:15px;padding:23px;margin-top:18px}.hub-panel h2{font-size:17px;margin:0 0 8px}.hub-panel>p{font-size:12px;color:var(--muted)}.hub-form{display:grid;gap:16px;margin-top:22px;max-width:700px}.hub-form label{display:grid;gap:8px;color:#555a76;font-size:12px}.hub-form input,.hub-form select,.hub-form textarea{width:100%;border:1px solid #e1e3ed;border-radius:9px;background:#fbfbfe;color:#252541;padding:12px;font:inherit;font-size:13px;outline:none}.hub-form input:focus,.hub-form select:focus,.hub-form textarea:focus{border-color:#8e6aff}.hub-form-message{font-size:12px;color:#c3b0ff}.hub-profile-panel{display:flex;align-items:center;gap:18px}.hub-profile-avatar{width:66px;height:66px;font-size:26px}.hub-profile-panel h2{margin:6px 0}.hub-profile-panel p{margin:0;color:var(--muted);font-size:12px}.hub-footer{text-align:center;padding:20px;color:#6f6f90;font-size:11px;border-top:1px solid var(--border)}.hub-mobile-label{display:none}
 @media(max-width:1050px){.hub-sidebar{width:215px}.hub-content{padding:23px 20px}.hub-topbar{padding:13px 20px}.hub-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-search{min-width:190px}}
-@media(max-width:720px){.hub-dashboard{border-radius:0;margin:0 -12px;min-height:calc(100vh - 60px)}.hub-sidebar{width:68px;padding:18px 8px}.hub-brand{padding:0 5px 22px}.hub-brand>span:last-child,.hub-user-mini>div:last-child,.hub-nav-label,.hub-nav-item:not(.active)::after,.hub-nav-item{font-size:0}.hub-brand-icon{width:42px;min-width:42px}.hub-user-mini{justify-content:center;padding:12px 0}.hub-avatar{min-width:36px}.hub-nav-item{justify-content:center;padding:12px 3px;gap:0}.hub-nav-item span{font-size:20px}.hub-nav-item{position:relative}.hub-sidebar-bottom{padding-top:18px}.hub-help-card{display:none}.hub-logout{font-size:0;text-align:center;padding:15px 0}.hub-logout:first-letter{font-size:20px}.hub-topbar{padding:12px;align-items:flex-start;flex-direction:column}.hub-mobile-label{display:block;color:#b19aff;font-size:10px;font-weight:800;letter-spacing:2px}.hub-breadcrumb{margin:6px 0}.hub-top-actions{width:100%;gap:7px}.hub-search{flex:1;min-width:0}.hub-search kbd{display:none}.hub-content{padding:18px 12px}.hub-welcome{padding:22px;min-height:190px}.hub-welcome-art{width:85px;transform:scale(.72);margin-right:-15px}.hub-welcome h1{font-size:24px}.hub-welcome p{font-size:12px}.hub-category-grid{gap:9px}.hub-category-card{padding:13px}.hub-category-icon{width:37px;height:37px;margin-bottom:11px}.hub-category-card strong{font-size:12px}.hub-category-card small{font-size:10px}.hub-section-heading h2{font-size:16px}.hub-panel{padding:17px}}
+@media(max-width:720px){.hub-dashboard{border-radius:0;margin:0 -12px;min-height:calc(100vh - 60px)}.hub-sidebar{width:68px;padding:18px 8px}.hub-brand{padding:0 5px 22px}.hub-brand>span:last-child,.hub-user-mini>div:last-child,.hub-nav-label,.hub-nav-item:not(.active)::after,.hub-nav-item{font-size:0}.hub-brand-icon{width:42px;min-width:42px}.hub-user-mini{justify-content:center;padding:12px 0}.hub-avatar{min-width:36px}.hub-nav-item{justify-content:center;padding:12px 3px;gap:0}.hub-nav-item span{font-size:20px}.hub-nav-item{position:relative}.hub-sidebar-bottom{padding-top:18px}.hub-help-card{display:none}.hub-logout{width:44px;height:44px;margin:16px auto 0;padding:0;border-radius:12px}.hub-logout-icon{font-size:20px}.hub-logout-text{display:none}.hub-topbar{padding:12px;align-items:flex-start;flex-direction:column}.hub-mobile-label{display:block;color:#b19aff;font-size:10px;font-weight:800;letter-spacing:2px}.hub-breadcrumb{margin:6px 0}.hub-top-actions{width:100%;gap:7px}.hub-search{flex:1;min-width:0}.hub-search kbd{display:none}.hub-content{padding:18px 12px}.hub-welcome{padding:22px;min-height:190px}.hub-welcome-art{width:85px;transform:scale(.72);margin-right:-15px}.hub-welcome h1{font-size:24px}.hub-welcome p{font-size:12px}.hub-category-grid{gap:9px}.hub-category-card{padding:13px}.hub-category-icon{width:37px;height:37px;margin-bottom:11px}.hub-category-card strong{font-size:12px}.hub-category-card small{font-size:10px;margin-top:6px}.hub-section-heading h2{font-size:16px}.hub-panel{padding:17px}}
 @media(max-width:390px){.hub-welcome-art{display:none}.hub-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-top-actions{gap:5px}.hub-icon-btn,.hub-top-avatar{width:34px;height:36px;flex-shrink:0}}
 
 /* Mobile navigation menu */
@@ -1564,7 +1548,8 @@ body:has(.hub-dashboard) #mobileMenuBtn { display: none !important; }
     .hub-nav-label { font-size: 10px; }
     .hub-nav-item { justify-content: flex-start; gap: 12px; padding: 12px 11px; font-size: 13px; }
     .hub-nav-item span { font-size: 19px; }
-    .hub-logout { font-size: 13px; text-align: left; padding: 19px 10px 0; }
+    .hub-logout { width: 100%; height: auto; justify-content: center; margin: 15px 0 0; padding: 11px 14px; font-size: 13px; text-align: center; }
+    .hub-logout-text { display: inline; font-size: 13px; }
     .hub-help-card { display: block; }
     .hub-topbar { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 8px 11px; padding: 12px 15px; }
     .hub-topbar > div:first-of-type { min-width: 0; }
@@ -1632,6 +1617,37 @@ body.dark-mode .hub-upi-panel{background:linear-gradient(135deg,#18192a,#201b38)
 body.dark-mode .hub-hostel-subnav,body.dark-mode .hub-hostel-room-card,body.dark-mode .hub-mess-day,body.dark-mode .hub-hostel-notice{background:#18192a;border-color:#2d2e46}body.dark-mode .hub-hostel-subheading h2,body.dark-mode .hub-mess-day h3,body.dark-mode .hub-hostel-notice h3{color:#f0efff}body.dark-mode .hub-hostel-room-card p,body.dark-mode .hub-mess-day p,body.dark-mode .hub-hostel-notice p,body.dark-mode .hub-hostel-subheading>small{color:#a0a2bc}
 @media(max-width:520px){.hub-hostel-subnav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.hub-hostel-subnav a{text-align:center}.hub-hostel-room-card{align-items:flex-start;flex-direction:column}}
 #section-hostel-mess .hub-page-heading{margin-bottom:20px}#section-hostel-mess .hub-page-heading>p{display:inline-flex;margin-top:8px;padding:7px 11px;border:1px solid #e7e2ff;border-radius:999px;background:#f6f3ff;color:#6551c8;font-size:12px;font-weight:750}#section-hostel-mess .hub-mess-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}#section-hostel-mess .hub-mess-day{position:relative;overflow:hidden;padding:18px;border:1px solid #e9e6f5;border-radius:17px;background:linear-gradient(150deg,#fff 0%,#fbfaff 100%);box-shadow:0 8px 24px #352b6810;transition:transform .18s ease,box-shadow .18s ease}#section-hostel-mess .hub-mess-day:before{position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#9a7aff,#6550db);content:""}#section-hostel-mess .hub-mess-day:hover{transform:translateY(-3px);box-shadow:0 13px 28px #352b6819}#section-hostel-mess .hub-mess-day h3{align-items:center;margin:2px 0 14px;padding-bottom:12px;border-bottom:1px solid #eeecf5;color:#292843;font-size:15px}#section-hostel-mess .hub-mess-day h3 small{padding:5px 8px;border-radius:999px;background:#f2efff;color:#705bd0;font-size:10px;font-weight:750}#section-hostel-mess .hub-mess-day p{display:grid;grid-template-columns:85px minmax(0,1fr);gap:8px;align-items:start;margin:0;padding:10px 0;border-bottom:1px solid #f0eff5;color:#596176;font-size:12px;line-height:1.5;overflow-wrap:anywhere}#section-hostel-mess .hub-mess-day p:last-child{border-bottom:0;padding-bottom:0}#section-hostel-mess .hub-mess-day p strong{color:#6550c8;font-size:10px;letter-spacing:.45px;text-transform:uppercase}body.dark-mode #section-hostel-mess .hub-page-heading>p{border-color:#383153;background:#211d35;color:#b8a8ff}body.dark-mode #section-hostel-mess .hub-mess-day{background:linear-gradient(150deg,#1c1c30,#171727);border-color:#303047}body.dark-mode #section-hostel-mess .hub-mess-day h3{border-color:#303047;color:#f0efff}body.dark-mode #section-hostel-mess .hub-mess-day h3 small{background:#292341;color:#c0b2ff}body.dark-mode #section-hostel-mess .hub-mess-day p{border-color:#2d2d43;color:#b5b6ca}body.dark-mode #section-hostel-mess .hub-mess-day p strong{color:#b8a8ff}@media(max-width:520px){ #section-hostel-mess .hub-mess-grid{grid-template-columns:1fr}#section-hostel-mess .hub-mess-day{padding:16px}}
+</style>
+
+<style>
+/* Product cards: clear actions and comfortable tap targets on Android phones. */
+.hub-home-product-card{display:flex;flex-direction:column;min-width:0}
+.hub-home-product-info{display:flex;flex:1;flex-direction:column;min-width:0}
+.hub-home-product-bottom{gap:10px;padding-bottom:2px}
+.hub-home-details{display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border:1px solid #e4defb;border-radius:10px;background:#f7f4ff;color:#654bc9;font-size:12px;font-weight:750;text-decoration:none;white-space:nowrap}
+.hub-home-details:hover{background:#eee9ff;border-color:#cfc3ff;color:#5038b3}
+.hub-dashboard-product-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+.hub-app-updates,.hub-hostel-updates{margin:18px 0 24px}
+.hub-app-updates-heading{margin:0 0 13px}
+.hub-app-updates-heading h2{margin:5px 0 0;color:#292744;font-size:18px}
+.hub-app-update-card{min-width:0;padding:17px;border:1px solid #e2dcf7;border-radius:16px;background:linear-gradient(145deg,#fff,#f8f6ff);box-shadow:0 6px 18px #4537720a}
+.hub-app-update-badge{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eeeaff;color:#644bc5;font-size:10px;font-weight:800;letter-spacing:.45px}
+.hub-app-update-card h3{margin:11px 0 7px;color:#292744;font-size:15px}
+.hub-app-update-card p{margin:0;color:#676980;font-size:12px;line-height:1.7;white-space:pre-wrap}
+.hub-app-update-card>small{display:block;margin-top:12px;color:#8b8ca0;font-size:10px}
+.hub-dashboard-add-cart,.hub-dashboard-buy-now{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:46px;padding:10px 9px;border:1px solid #7055df;border-radius:12px;background:linear-gradient(120deg,#8069e9,#624bd0);color:#fff;font:inherit;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer;box-shadow:0 5px 14px #7055df24;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.hub-dashboard-add-cart:hover,.hub-dashboard-buy-now:hover{transform:translateY(-1px);box-shadow:0 8px 18px #7055df35;color:#fff}
+.hub-dashboard-buy-now{border-color:#edc86e;background:linear-gradient(120deg,#fff7df,#ffefbf);color:#7c5200;box-shadow:none}
+.hub-dashboard-buy-now:hover{background:linear-gradient(120deg,#ffefbf,#ffe59d);color:#674300;box-shadow:0 7px 16px #d9a82b25}
+.hub-dashboard-add-cart:disabled{opacity:.65;cursor:wait;transform:none}
+.hub-dashboard-cart-feedback{grid-column:1/-1;min-height:0;color:#16815c;font-size:11px;line-height:1.35}
+.hub-dashboard-cart-feedback:empty{display:none}
+@media(max-width:720px){.hub-home-product-card{border-radius:16px}.hub-home-product-image{height:clamp(155px,48vw,220px)}.hub-home-product-info{padding:15px}.hub-home-product-description{min-height:0}.hub-dashboard-product-actions{gap:8px;margin-top:12px}.hub-dashboard-add-cart,.hub-dashboard-buy-now{min-height:48px;border-radius:11px;font-size:12px}}
+@media(max-width:360px){.hub-dashboard-add-cart,.hub-dashboard-buy-now{gap:5px;padding-inline:6px;font-size:11px}.hub-home-details{padding:7px 9px}}
+body.dark-mode .hub-home-details{background:#282341;border-color:#43396b;color:#d0c5ff}
+body.dark-mode .hub-app-update-card{background:linear-gradient(145deg,#1e1d32,#18192a);border-color:#36314f}
+body.dark-mode .hub-app-update-card h3,body.dark-mode .hub-app-updates-heading h2{color:#f0efff}
+body.dark-mode .hub-app-update-card p,body.dark-mode .hub-app-update-card>small{color:#a0a2bc}
 </style>
 
 <script>
@@ -1705,7 +1721,7 @@ menuOverlay.addEventListener("click", closeMobileMenu);
         closeMobileMenu();
 
         sections.forEach(section => section.classList.toggle("active", section === target));
-        navItems.forEach(item => item.classList.toggle("active", item.dataset.section === name || (item.dataset.section === "complaints" && name.startsWith("hostel-"))));
+        navItems.forEach(item => item.classList.toggle("active", item.dataset.section === name));
 
         const labels = {
     home: "Home",
@@ -1714,11 +1730,7 @@ menuOverlay.addEventListener("click", closeMobileMenu);
     services: "Services",
     medical: "Medical & Health",
     orders: "My Orders",
-    complaints: "Hostel & Mess Services",
-    "hostel-room": "Room Details",
-    "hostel-mess": "Mess Schedule",
-    "hostel-requests": "Service Requests",
-    "hostel-notices": "Hostel Notices",
+    complaints: "Product & Service Support",
     updates: "Updates",
     account: "My Account",
     payments: "Payments & Bills"
@@ -1882,7 +1894,7 @@ const medicalOptions = {
     },
     emergency: {
         title: "Emergency Assistance",
-        description: "For immediate danger, contact local emergency services or your warden directly. In India, emergency assistance is available at 112."
+        description: "For immediate danger, contact local emergency services or your hostel office directly. In India, emergency assistance is available at 112."
     },
     hospitals: {
         title: "Hospitals & Clinics",
@@ -1890,7 +1902,7 @@ const medicalOptions = {
     },
     appointment: {
         title: "Doctor Appointment",
-        description: "Choose a listed doctor and send a preferred appointment time."
+        description: "Choose a doctor and request a visit. The doctor assigns the time and sends your appointment slip."
     },
     requests: {
         title: "My Medical Requests",
@@ -1966,5 +1978,36 @@ function openHostelHubSection(sectionName) {
         block: "start"
     });
 }
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-dashboard-cart]").forEach(function (button) {
+        button.addEventListener("click", async function () {
+            if (button.disabled) return;
+            const feedback = button.parentElement.querySelector(".hub-dashboard-cart-feedback");
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            if (feedback) feedback.textContent = "Adding to your cart…";
+            try {
+                const response = await fetch("/cart/add/" + encodeURIComponent(button.dataset.dashboardCart), {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || "Could not add this item.");
+                const cartCount = document.getElementById("hubCartCount");
+                if (cartCount) cartCount.textContent = result.cart_count;
+                button.innerHTML = "✓ <span>Added</span>";
+                if (feedback) feedback.textContent = result.message || "Added to your cart.";
+                window.setTimeout(function () { button.innerHTML = originalText; }, 1400);
+            } catch (error) {
+                if (feedback) feedback.textContent = error.message || "Could not add this item. Please try again.";
+                else window.alert(error.message || "Could not add this item. Please try again.");
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+});
 </script>
 {% endblock %}

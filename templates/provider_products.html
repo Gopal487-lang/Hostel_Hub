@@ -1,6 +1,29 @@
 {% extends "provider_shell.html" %}
 {% block provider_content %}
-<section class="sk-panel"><div class="sk-panel-head"><div><span class="sk-eyebrow">STORE INVENTORY</span><h2>My Products</h2></div>{% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">＋ Add Product</a>{% endif %}</div>
-{% if products %}<div class="sk-table-wrap"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Approval status</th></tr></thead><tbody>{% for product in products %}<tr><td><strong>{{ product.name }}</strong><small>{{ product.category_name or 'Uncategorized' }}</small></td><td>₹{{ '%.2f'|format(product.price or 0) }}</td><td>{{ product.stock_quantity }}</td><td>{% if product.is_published %}<span class="sk-badge published">Published</span>{% else %}<span class="sk-badge pending">Pending admin approval</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="sk-empty"><span>▣</span><h3>No products added yet</h3><p>Submit a product for admin approval. It will be visible to students after it is published.</p>{% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">Add your first product</a>{% endif %}</div>{% endif %}
+<section class="sk-panel">
+  <div class="sk-panel-head">
+    <div><span class="sk-eyebrow">STORE INVENTORY</span><h2>My Products</h2></div>
+    {% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">＋ Add Product</a>{% endif %}
+  </div>
+  {% if products %}
+  <div class="sk-table-wrap"><table>
+    <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Approval status</th><th>Action</th></tr></thead>
+    <tbody>{% for product in products %}
+      <tr>
+        <td><strong>{{ product.name }}</strong><small>{{ product.category_name or 'Uncategorized' }}</small></td>
+        <td>₹{{ '%.2f'|format(product.price or 0) }}</td>
+        <td>{{ product.stock_quantity }}</td>
+        <td>{% if product.pending_update_id %}<span class="sk-badge pending">Update awaiting approval</span>{% elif product.is_published %}<span class="sk-badge published">Published</span>{% else %}<span class="sk-badge pending">Pending admin approval</span>{% endif %}</td>
+        <td><a class="sk-button secondary" href="{{ url_for('provider_edit_product', product_id=product.id) }}">Edit</a></td>
+      </tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}
+  <div class="sk-empty"><span>▣</span><h3>No products added yet</h3><p>Submit a product for admin approval. It will be visible to students after it is published.</p>{% if shop %}<a class="sk-button" href="{{ url_for('provider_add_product') }}">Add your first product</a>{% endif %}</div>
+  {% endif %}
 </section>
+<style>
+.sk-button.secondary{display:inline-flex;align-items:center;justify-content:center;background:#f0edff;color:#5c43c8;text-decoration:none;border:1px solid #e0d9ff;padding:8px 13px;border-radius:9px;font-weight:700;font-size:12px}
+.sk-button.secondary:hover{background:#e6e0ff}
+</style>
 {% endblock %}

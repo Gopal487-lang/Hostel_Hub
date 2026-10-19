@@ -34,7 +34,7 @@
     flex-direction: column;
     justify-content: center;
     color: white;
-    background: linear-gradient(145deg, #6254e8, #8b5cf6 65%, #a66bfa);
+    background: linear-gradient(145deg, var(--hh-primary), #8b5cf6 65%, var(--secondary));
     position: relative;
     overflow: hidden;
 }
@@ -123,7 +123,7 @@
 }
 
 .auth-eyebrow {
-    color: #6254e8;
+    color: var(--hh-primary);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 2px;
@@ -143,6 +143,37 @@
     line-height: 1.7;
     margin-bottom: 30px;
 }
+
+.login-role-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    margin: 0 0 22px;
+}
+
+.login-role-tab {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 8px;
+    border: 1px solid #e4e3ef;
+    border-radius: 12px;
+    background: #fff;
+    color: #65677d;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: .18s ease;
+}
+
+.login-role-tab:hover { border-color: var(--hh-primary); color: var(--hh-primary-dark); }
+.login-role-tab.active { border-color: var(--hh-primary); background: #eeecff; color: var(--hh-primary-dark); box-shadow: 0 0 0 3px rgba(101,88,245,.10); }
+.login-role-tab[data-role="admin"].active { border-color: #34445f; background: #edf1f7; color: #26364e; box-shadow: 0 0 0 3px rgba(52,68,95,.10); }
+.login-role-tab[data-role="shopkeeper"].active { border-color: #168265; background: #e8f7f1; color: #126a54; box-shadow: 0 0 0 3px rgba(22,130,101,.10); }
+.login-form-title { margin: 0 0 8px; color: #20243a; font-size: 20px; }
 
 .auth-field {
     margin-bottom: 20px;
@@ -218,7 +249,7 @@
 }
 
 .auth-link {
-    color: #6254e8;
+    color: var(--hh-primary);
     text-decoration: none;
     font-weight: 700;
 }
@@ -232,7 +263,7 @@
     min-height: 50px;
     border: 0;
     border-radius: 12px;
-    background: linear-gradient(135deg, #6254e8, #8b5cf6);
+    background: linear-gradient(135deg, var(--hh-primary), #8b5cf6);
     color: white;
     font-size: 15px;
     font-weight: 700;
@@ -350,11 +381,6 @@
     </button>
 
 <button type="button" class="login-role-tab"
-        data-role="warden" role="tab" aria-selected="false">
-    <i class="fa-solid fa-shield-halved"></i> Warden
-</button>
-
-<button type="button" class="login-role-tab"
         data-role="admin" role="tab" aria-selected="false">
     <i class="fa-solid fa-user-gear"></i> Admin
 </button>
@@ -367,8 +393,6 @@
 </div>
 
 <h2 id="loginFormTitle" class="login-form-title">User Login</h2>
-
-<h2 id="loginFormTitle"></h2>
             <p class="auth-subtitle">
                 Enter your details to access your account.
             </p>
@@ -472,6 +496,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    const requestedRole = new URLSearchParams(window.location.search).get("role");
+    const initialTab = Array.from(tabs).find(tab => tab.dataset.role === requestedRole);
+    if (initialTab) initialTab.click();
+
     tabs.forEach(function (tab) {
         tab.addEventListener("click", function () {
             const role = this.dataset.role;
@@ -486,7 +514,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const titles = {
                 user: "User Login",
-                warden: "Warden Login",
                 admin: "Admin Login",
                 shopkeeper: "Shopkeeper Login"
             };

@@ -48,7 +48,7 @@
             padding: 11px 16px;
             border: 0;
             border-radius: 9px;
-            background: #6558f5;
+            background: var(--hh-primary);
             color: white;
             text-decoration: none;
             font-size: 13px;
@@ -60,9 +60,43 @@
             background: #5043db;
         }
 
+        /* Keep the primary add action the same size and shape as Add Food;
+           use violet to make its all-category action distinct. */
+        .btn-add-product {
+            background: #7357e8;
+            color: #fff;
+            white-space: nowrap;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .btn-add-product:hover {
+            background: #5c43c8;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .updates-review { margin: 0 0 22px; padding: 20px; border: 1px solid #e3ddfa; border-radius: 16px; background: linear-gradient(135deg,#fbfaff,#f2efff); }
+        .updates-review h2 { margin: 0 0 5px; color: #30284f; font-size: 19px; }
+        .updates-review-intro { margin: 0 0 15px; color: #77738c; font-size: 13px; }
+        .update-request { margin-top: 12px; padding: 16px; border: 1px solid #e8e4f4; border-radius: 13px; background: #fff; }
+        .update-request-head { display:flex; justify-content:space-between; align-items:center; gap:14px; }
+        .update-request-head h3 { margin:0 0 5px; color:#292744; font-size:16px; }
+        .update-request-head p,.update-request-head small { margin:0; color:#77758f; font-size:12px; }
+        .update-request-actions { display:flex; flex-wrap:wrap; gap:8px; }
+        .update-request-actions form { margin:0; }
+        .update-approve,.update-reject { min-height:39px; padding:9px 13px; border:0; border-radius:9px; color:#fff; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+        .update-approve { background:#16815c; }.update-approve:hover{background:#106849}
+        .update-reject { background:#fff0f2; color:#b33e5d; border:1px solid #f1cbd4; }.update-reject:hover{background:#ffe4ea}
+        .update-request details { margin-top:13px; border-top:1px solid #efedf5; padding-top:11px; }
+        .update-request summary { color:#624bc8; font-size:12px; font-weight:750; cursor:pointer; }
+        .update-compare { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:12px; }
+        .update-version { min-width:0; padding:12px; border-radius:10px; background:#f8f7fc; color:#55536c; font-size:12px; line-height:1.6; overflow-wrap:anywhere; }
+        .update-version.proposed { background:#f2efff; }.update-version strong { display:block; margin-bottom:7px; color:#393453; }
+        .update-version img { display:block; width:64px; height:64px; margin-top:8px; border:1px solid #e5e1f1; border-radius:9px; object-fit:cover; }
+
         .btn-light {
             background: #eeecff;
-            color: #5141dc;
+            color: var(--hh-primary-dark);
         }
 
         .btn-danger {
@@ -209,6 +243,12 @@
                 width: 100%;
                 text-align: center;
             }
+
+            .updates-review { padding:14px; }
+            .update-request-head { align-items:flex-start; flex-direction:column; }
+            .update-compare { grid-template-columns:1fr; }
+            .update-request-actions { width:100%; }
+            .update-request-actions form,.update-request-actions button { flex:1; }
         }
     </style>
 </head>
@@ -225,7 +265,7 @@
         </div>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <a class="btn" href="{{ url_for('add_product') }}">+ Add Product</a>
+            <a class="btn btn-add-product" href="{{ url_for('add_product') }}">+ Add Product</a>
             <a class="btn" style="background:#f08a24" href="{{ url_for('add_product', category='food-snacks') }}">+ Add Food</a>
             <a class="btn" style="background:#b23db3" href="{{ url_for('add_product', category='clothing-tailoring') }}">+ Add Clothing</a>
         </div>
@@ -242,6 +282,57 @@
             <div class="flash">{{ message }}</div>
         {% endfor %}
     {% endwith %}
+
+    {% if product_updates %}
+    <section class="updates-review" aria-labelledby="productUpdatesHeading">
+        <h2 id="productUpdatesHeading">Shopkeeper product updates <span class="badge unpublished">{{ product_updates|length }} awaiting review</span></h2>
+        <p class="updates-review-intro">Review each submitted version. The current product stays live until you approve the update.</p>
+        {% for update in product_updates %}
+        <article class="update-request">
+            <div class="update-request-head">
+                <div>
+                    <h3>{{ update.proposed_name }}</h3>
+                    <p>{{ update.shop_name }} · {{ update.category_name or 'Uncategorized' }} · Product #{{ update.product_id }}</p>
+                    <small>Submitted by {{ update.provider_name or 'Shopkeeper' }} · {{ update.submitted_at }}</small>
+                </div>
+                <div class="update-request-actions">
+                    <form method="POST" action="{{ url_for('approve_product_update', request_id=update.request_id) }}" onsubmit="return confirm('Approve and apply this product update?');">
+                        <button class="update-approve" type="submit">✓ Approve update</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('reject_product_update', request_id=update.request_id) }}" onsubmit="return confirm('Reject this update and keep the current listing?');">
+                        <button class="update-reject" type="submit">Reject</button>
+                    </form>
+                </div>
+            </div>
+            <details>
+                <summary>Compare current listing with submitted version</summary>
+                <div class="update-compare">
+                    <div class="update-version">
+                        <strong>Currently live</strong>
+                        Name: {{ update.current_name }}<br>
+                        Price: ₹{{ '%.2f'|format(update.current_price or 0) }}<br>
+                        Stock: {{ update.current_stock_quantity }}<br>
+                        Available sizes: {{ update.current_sizes or '—' }}<br>
+                        Out of stock sizes: {{ update.current_out_of_stock_sizes or '—' }}<br>
+                        Description: {{ update.current_description or '—' }}
+                        {% if update.current_image_url %}<img src="{{ update.current_image_url }}" alt="Current product image">{% endif %}
+                    </div>
+                    <div class="update-version proposed">
+                        <strong>Submitted version</strong>
+                        Name: {{ update.proposed_name }}<br>
+                        Price: ₹{{ '%.2f'|format(update.proposed_price or 0) }}<br>
+                        Stock: {{ update.proposed_stock_quantity }}<br>
+                        Available sizes: {{ update.proposed_sizes or '—' }}<br>
+                        Out of stock sizes: {{ update.proposed_out_of_stock_sizes or '—' }}<br>
+                        Description: {{ update.proposed_description or '—' }}
+                        {% if update.proposed_image_url %}<img src="{{ update.proposed_image_url }}" alt="Submitted product image">{% endif %}
+                    </div>
+                </div>
+            </details>
+        </article>
+        {% endfor %}
+    </section>
+    {% endif %}
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px">
         <a class="btn {{ 'btn-green' if category_filter == 'all' else 'btn-light' }}" href="{{ url_for('admin_products') }}">All</a>

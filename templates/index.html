@@ -634,10 +634,23 @@
 
                 </div>
 
-                <a href="{{ url_for('login') }}" class="btn btn-primary hostel-cta">
-                    Access Your Dashboard
-                    <i class="fa-solid fa-arrow-right"></i>
-                </a>
+                <div class="hostel-login-options" aria-label="Choose account type to log in">
+                    <a class="hostel-login-option student" href="{{ url_for('login', role='user') }}">
+                        <i class="fa-solid fa-user-graduate"></i>
+                        <span><strong>User Login</strong><small>Student account</small></span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                    <a class="hostel-login-option admin" href="{{ url_for('login', role='admin') }}">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span><strong>Admin Login</strong><small>Manage HostelHub</small></span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                    <a class="hostel-login-option shopkeeper" href="{{ url_for('login', role='shopkeeper') }}">
+                        <i class="fa-solid fa-store"></i>
+                        <span><strong>Shopkeeper Login</strong><small>Manage your shop</small></span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
 
             </div>
 

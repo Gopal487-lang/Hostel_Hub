@@ -5,6 +5,6 @@
     <div style="font-size:68px">🔎</div>
     <h1>Page or product not found</h1>
     <p style="color:#737d92;line-height:1.6">This item may have been removed, unpublished, or is no longer available.</p>
-    <a href="{{ url_for('marketplace') if session.get('role') == 'student' else url_for('home') }}" style="display:inline-block;margin-top:10px;padding:12px 17px;border-radius:9px;background:#6558f5;color:white;text-decoration:none;font-weight:700">Back to Marketplace</a>
+    <a href="{{ url_for('marketplace') if session.get('role') == 'student' else url_for('home') }}" style="display:inline-block;margin-top:10px;padding:12px 17px;border-radius:9px;background:var(--hh-primary);color:white;text-decoration:none;font-weight:700">Back to Marketplace</a>
 </main>
 {% endblock %}

@@ -96,7 +96,7 @@
     padding: 10px 14px;
     border: none;
     border-radius: 9px;
-    background: #4f46e5;
+    background: var(--hh-primary);
     color: white;
     text-decoration: none;
     font-weight: 600;
@@ -159,6 +159,10 @@
     opacity: .7;
     font-size: 12px;
 }
+
+.service-rate-editor { display:grid; gap:6px; min-width:150px; }
+.service-rate-editor textarea { box-sizing:border-box; width:100%; min-width:140px; padding:8px; border:1px solid var(--border-color,#d1d5db); border-radius:8px; background:var(--card-bg,#fff); color:inherit; font:inherit; font-size:12px; resize:vertical; }
+.service-rate-editor .module-btn { padding:8px 10px; font-size:11px; }
 
 .module-inline {
     display: flex;
@@ -268,6 +272,12 @@
                           placeholder="Describe the service"></textarea>
             </div>
 
+            <div style="grid-column:1/-1">
+                <label>Item rates (one per line: Item name = rupees)</label>
+                <textarea name="pricing_options" rows="5" placeholder="Shirt / T-shirt = 15&#10;Shorts = 12&#10;Blazer = 70"></textarea>
+                <small class="module-muted">Students choose quantities from this list and see the estimated total before requesting.</small>
+            </div>
+
             <div style="align-self:end">
                 <button class="module-btn" type="submit">
                     Add Service
@@ -289,6 +299,7 @@
                         <th>Price</th>
                         <th>Time</th>
                         <th>Availability</th>
+                        <th>Item Rates</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -318,6 +329,14 @@
                         </td>
 
                         <td>
+                            <form method="POST" action="{{ url_for('update_service_pricing', service_id=service.id) }}" class="service-rate-editor">
+                                <textarea name="pricing_options" rows="5" aria-label="Price options for {{ service.name }}">{{ service.pricing_editor_text }}</textarea>
+                                <small class="module-muted">Name = ₹ per unit</small>
+                                <button class="module-btn secondary" type="submit">Save rates</button>
+                            </form>
+                        </td>
+
+                        <td>
                             <div class="module-actions">
                                 <form method="POST"
                                       action="{{ url_for('toggle_service', service_id=service.id) }}">
@@ -340,7 +359,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6">No services added yet.</td>
+                        <td colspan="7">No services added yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -352,18 +371,19 @@
         <h2>Student Service Requests</h2>
         <div class="module-table-wrap">
             <table class="module-table">
-                <thead><tr><th>Student</th><th>Service</th><th>Request details</th><th>Preferred time</th><th>Current status</th><th>Update / reply</th></tr></thead>
+                <thead><tr><th>Student</th><th>Service</th><th>Request details</th><th>Estimate</th><th>Preferred time</th><th>Current status</th><th>Update / reply</th></tr></thead>
                 <tbody>
                 {% for booking in service_bookings %}
                     <tr>
                         <td>{{ booking.student_name }}<div class="module-muted">{{ booking.student_phone or '' }}</div></td>
                         <td>{{ booking.service_name }}</td>
                         <td>{{ booking.details }}</td>
+                        <td>₹{{ '%.2f'|format(booking.estimated_cost or 0) }}</td>
                         <td>{{ booking.preferred_at or 'Flexible' }}</td>
                         <td>{{ booking.status }}{% if booking.admin_notes %}<div class="module-muted">{{ booking.admin_notes }}</div>{% endif %}</td>
                         <td><form method="post" action="{{ url_for('update_service_booking', booking_id=booking.id) }}"><select name="status"><option {{ 'selected' if booking.status == 'Order Placed' }}>Order Placed</option><option {{ 'selected' if booking.status == 'Verified' }}>Verified</option><option {{ 'selected' if booking.status == 'Ready for Pickup' }}>Ready for Pickup</option><option {{ 'selected' if booking.status == 'Service Done' }}>Service Done</option><option {{ 'selected' if booking.status == 'Out for Delivery' }}>Out for Delivery</option><option {{ 'selected' if booking.status == 'Pending' }}>Pending</option><option {{ 'selected' if booking.status == 'Confirmed' }}>Confirmed</option><option {{ 'selected' if booking.status == 'In Progress' }}>In Progress</option><option {{ 'selected' if booking.status == 'Completed' }}>Completed</option><option {{ 'selected' if booking.status == 'Cancelled' }}>Cancelled</option></select><input name="admin_notes" value="{{ booking.admin_notes or '' }}" placeholder="Reply / notes" style="margin:7px 0;padding:8px;width:100%"><button class="module-btn" type="submit">Save</button></form></td>
                     </tr>
-                {% else %}<tr><td colspan="6">No student service requests yet.</td></tr>{% endfor %}
+                {% else %}<tr><td colspan="7">No student service requests yet.</td></tr>{% endfor %}
                 </tbody>
             </table>
         </div>
@@ -922,6 +942,67 @@
         </a>
     </div>
 
+
+    {% elif module == 'app_updates' %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="module-card" style="padding:12px 16px;color:{{ '#166534' if category == 'success' else '#9b2c3d' }};background:{{ '#eafaf0' if category == 'success' else '#fff2f4' }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="module-card">
+        <h2>📣 Publish an app update</h2>
+        <p>Post release notes or important HostelHub announcements for students and shopkeepers.</p>
+        <form method="POST" action="{{ url_for('admin_app_updates') }}" class="module-form">
+            <div>
+                <label for="updateTitle">Title *</label>
+                <input id="updateTitle" name="title" maxlength="160" required placeholder="e.g. New order tracking is here">
+            </div>
+            <div>
+                <label for="updateVersion">Version (optional)</label>
+                <input id="updateVersion" name="version" maxlength="40" placeholder="e.g. 1.2.0">
+            </div>
+            <div>
+                <label for="updateAudience">Show to</label>
+                <select id="updateAudience" name="audience">
+                    <option value="all">All users</option>
+                    <option value="students">Students</option>
+                    <option value="shopkeepers">Shopkeepers</option>
+                </select>
+            </div>
+            <div style="grid-column:1/-1">
+                <label for="updateBody">Update details *</label>
+                <textarea id="updateBody" name="body" maxlength="5000" required placeholder="Explain what is new or changed."></textarea>
+            </div>
+            <div style="align-self:end"><button class="module-btn" type="submit">Publish update</button></div>
+        </form>
+    </div>
+
+    <div class="module-card">
+        <h2>Published and saved updates</h2>
+        {% if app_updates %}
+        <div class="module-table-wrap">
+            <table class="module-table">
+                <thead><tr><th>Update</th><th>Audience</th><th>Published</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>{% for update in app_updates %}
+                    <tr>
+                        <td><strong>{{ update.title }}</strong>{% if update.version %}<div class="module-muted">Version {{ update.version }}</div>{% endif %}<div style="margin-top:6px;white-space:pre-wrap">{{ update.body }}</div></td>
+                        <td>{{ update.audience|title }}</td>
+                        <td>{{ update.created_at }}</td>
+                        <td>{{ 'Visible' if update.is_active else 'Hidden' }}</td>
+                        <td><div class="module-actions">
+                            <form method="POST" action="{{ url_for('toggle_app_update', update_id=update.id) }}"><button class="module-btn secondary" type="submit">{{ 'Hide' if update.is_active else 'Show' }}</button></form>
+                            <form method="POST" action="{{ url_for('delete_app_update', update_id=update.id) }}" onsubmit="return confirm('Delete this app update?');"><button class="module-btn danger" type="submit">Delete</button></form>
+                        </div></td>
+                    </tr>
+                {% endfor %}</tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="module-muted">No app updates have been posted yet.</p>
+        {% endif %}
+    </div>
 
     <!-- SETTINGS -->
 

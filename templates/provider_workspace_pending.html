@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Workspace Not Assigned | HostelHub{% endblock %}
+{% block content %}
+<main style="min-height:65vh;display:grid;place-items:center;padding:30px 16px;background:#f6f5fc">
+  <section style="max-width:560px;padding:30px;border-radius:18px;background:#fff;border:1px solid #e6e7ef;box-shadow:0 12px 35px #29264b10;text-align:center">
+    <div style="font-size:42px">🔐</div><h1 style="margin:12px 0;color:#282943">Workspace not assigned</h1>
+    <p style="color:#73778d;line-height:1.65">Your account does not have a Product Shopkeeper or Service Provider workspace assigned yet. Ask the administrator to set your account type in User Management.</p>
+    <a href="{{ url_for('logout') }}" style="display:inline-flex;margin-top:8px;padding:11px 16px;border-radius:10px;background:var(--hh-primary);color:#fff;text-decoration:none;font-weight:700">Sign out</a>
+  </section>
+</main>
+{% endblock %}
